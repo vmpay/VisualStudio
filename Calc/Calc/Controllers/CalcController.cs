@@ -15,9 +15,9 @@ namespace Calc.Controllers
     {
         [Route("api/add")]
         [HttpGet]
-        public HttpResponseMessage GetSum([FromUri]int a, [FromUri]int b)
+        public HttpResponseMessage GetSum([FromUri]double a, [FromUri]double b)
         {
-            string xml = string.Format("<result><value>{0}</value><broughtToYouBy>Azure API Management - http://azure.microsoft.com/apim/ </broughtToYouBy></result>", a + b);
+            string xml = string.Format("{0}", a + b);
             HttpResponseMessage response = Request.CreateResponse();
             response.Content = new StringContent(xml, System.Text.Encoding.UTF8, "application/xml");
             return response;
@@ -25,9 +25,9 @@ namespace Calc.Controllers
 
         [Route("api/sub")]
         [HttpGet]
-        public HttpResponseMessage GetDiff([FromUri]int a, [FromUri]int b)
+        public HttpResponseMessage GetDiff([FromUri]double a, [FromUri]double b)
         {
-            string xml = string.Format("<result><value>{0}</value><broughtToYouBy>Azure API Management - http://azure.microsoft.com/apim/ </broughtToYouBy></result>", a - b);
+            string xml = string.Format("{0}", a - b);
             HttpResponseMessage response = Request.CreateResponse();
             response.Content = new StringContent(xml, System.Text.Encoding.UTF8, "application/xml");
             return response;
@@ -35,9 +35,9 @@ namespace Calc.Controllers
 
         [Route("api/sqrt")]
         [HttpGet]
-        public HttpResponseMessage GetSqrt([FromUri]int a)
+        public HttpResponseMessage GetSqrt([FromUri]double a)
         {
-            string xml = string.Format("<result><value>{0}</value><broughtToYouBy>Azure API Management - http://azure.microsoft.com/apim/ </broughtToYouBy></result>", Math.Sqrt(a));
+            string xml = string.Format("{0}", Math.Sqrt(a));
             HttpResponseMessage response = Request.CreateResponse();
             response.Content = new StringContent(xml, System.Text.Encoding.UTF8, "application/xml");
             return response;
@@ -45,9 +45,9 @@ namespace Calc.Controllers
 
         [Route("api/jedenprzezx")]
         [HttpGet]
-        public HttpResponseMessage GetJedenprzezx([FromUri]int a)
+        public HttpResponseMessage GetJedenprzezx([FromUri]double a)
         {
-            string xml = string.Format("<result><value>{0}</value><broughtToYouBy>Azure API Management - http://azure.microsoft.com/apim/ </broughtToYouBy></result>", 1/a);
+            string xml = string.Format("{0}", 1/a);
             HttpResponseMessage response = Request.CreateResponse();
             response.Content = new StringContent(xml, System.Text.Encoding.UTF8, "application/xml");
             return response;
@@ -55,9 +55,9 @@ namespace Calc.Controllers
 
         [Route("api/xpow2")]
         [HttpGet]
-        public HttpResponseMessage GetXpow2([FromUri]int a)
+        public HttpResponseMessage GetXpow2([FromUri]double a)
         {
-            string xml = string.Format("<result><value>{0}</value><broughtToYouBy>Azure API Management - http://azure.microsoft.com/apim/ </broughtToYouBy></result>", a*a);
+            string xml = string.Format("{0}", a*a);
             HttpResponseMessage response = Request.CreateResponse();
             response.Content = new StringContent(xml, System.Text.Encoding.UTF8, "application/xml");
             return response;
@@ -65,9 +65,9 @@ namespace Calc.Controllers
 
         [Route("api/xpowy")]
         [HttpGet]
-        public HttpResponseMessage GetXpowy([FromUri]int a, [FromUri]int b)
+        public HttpResponseMessage GetXpowy([FromUri]double a, [FromUri]double b)
         {
-            string xml = string.Format("<result><value>{0}</value><broughtToYouBy>Azure API Management - http://azure.microsoft.com/apim/ </broughtToYouBy></result>", Math.Pow(a,b));
+            string xml = string.Format("{0}", Math.Pow(a,b));
             HttpResponseMessage response = Request.CreateResponse();
             response.Content = new StringContent(xml, System.Text.Encoding.UTF8, "application/xml");
             return response;
@@ -75,9 +75,9 @@ namespace Calc.Controllers
 
         [Route("api/mul")]
         [HttpGet]
-        public HttpResponseMessage GetProduct([FromUri]int a, [FromUri]int b)
+        public HttpResponseMessage GetProduct([FromUri]double a, [FromUri]double b)
         {
-            string xml = string.Format("<result><value>{0}</value><broughtToYouBy>Azure API Management - http://azure.microsoft.com/apim/ </broughtToYouBy></result>", a * b);
+            string xml = string.Format("{0}", a * b);
             HttpResponseMessage response = Request.CreateResponse();
             response.Content = new StringContent(xml, System.Text.Encoding.UTF8, "application/xml");
             return response;
@@ -85,9 +85,9 @@ namespace Calc.Controllers
 
         [Route("api/div")]
         [HttpGet]
-        public HttpResponseMessage GetDiv([FromUri]int a, [FromUri]int b)
+        public HttpResponseMessage GetDiv([FromUri]double a, [FromUri]double b)
         {
-            string xml = string.Format("<result><value>{0}</value><broughtToYouBy>Azure API Management - http://azure.microsoft.com/apim/ </broughtToYouBy></result>", a / b);
+            string xml = string.Format("{0}", a / b);
             HttpResponseMessage response = Request.CreateResponse();
             response.Content = new StringContent(xml, System.Text.Encoding.UTF8, "application/xml");
             return response;

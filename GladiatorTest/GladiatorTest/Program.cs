@@ -1,22 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Web.Http;
-using System.IO;
-using System.Web;
-using Gladiator.Models;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Gladiator.Controllers
+namespace GladiatorTest
 {
-    public class GladController : ApiController
+    class Program
     {
-        [Route("api/fight")]
-        [HttpGet]
-        public HttpResponseMessage Fight([FromUri]double a, [FromUri]double b, [FromUri]double c, [FromUri]int d)
+        static void Main(string[] args)
         {
-            Gladiator enemy = new Gladiator(d);
+            char pressanykey;
+            double a = 80, b = 6, c = 60;
+            double a2 = 98, b2 = 8, c2 = 0;
+            int d = 2;
+            //Gladiator enemy = new Gladiator(d);
+            Gladiator enemy = new Gladiator(a2, b2, c2);
             Gladiator player = new Gladiator(a, b, c);
             bool result;
             string resultmsg = "Empty";
@@ -25,15 +24,10 @@ namespace Gladiator.Controllers
                 resultmsg = "You win!";
             else
                 resultmsg = "You lose!";
-            //string xml = string.Format("<result><value>{0}</value><broughtToYouBy>Azure API Management - http://azure.microsoft.com/apim/ </broughtToYouBy></result>", result);
-            string xml = string.Format("{0}", resultmsg);
-            HttpResponseMessage response = Request.CreateResponse();
-            response.Content = new StringContent(xml, System.Text.Encoding.UTF8, "application/xml");
-            return response;
+            Console.WriteLine(resultmsg);
+            pressanykey = (char)Console.Read();
         }
-
     }
-
     public class Gladiator
     {
         private double hp;//hit points
@@ -97,157 +91,121 @@ namespace Gladiator.Controllers
             hp = a + basehp;
             ap = b + baseap;
             crit = basecrit + critbonus;
-           // Console.WriteLine("My crit chance={0}", crit);
+            //Console.WriteLine("My crit chance={0}", crit);
         }
         public bool battle(Gladiator enemy)
         {
             Random rnd = new Random();
             double tmpap = ap, tmphp = hp;
             double tmpape = enemy.ap, tmphpe = enemy.hp;
-            //Console.WriteLine("Before the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe);
-            if ((rnd.Next(0, 100) % 2) == 0)//Player.this strikes first
+            Console.WriteLine("Before the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe);
+            if ((rnd.Next(0, 100)%2) == 0)//Player.this strikes first
             {
                 int i = 0;
-                //Console.WriteLine("Player strikes first");
+                Console.WriteLine("Player strikes first");
                 //insert while
                 while ((tmphp > 0) && (tmphpe > 0))
                 {
-
+                    
                     if (rnd.Next(0, 100) >= miss * 100)
                     {
-                        if (rnd.Next(0, 100) <= crit * 100)
-                        {
-                            tmpap = tmpap * xcrit;
-                            //Console.WriteLine("Player critically hits!");
-                        }
+                        if (rnd.Next(0, 100) <= crit * 100) { tmpap = tmpap * xcrit; Console.WriteLine("Player critically hits!"); }
                         if (rnd.Next(0, 100) >= ev * 100)
                         {
                             if (rnd.Next(0, 100) <= block * 100)
                             {
                                 tmpap = tmpap * xblock;
-                                //Console.WriteLine("Enemy blocks the attack!");
+                                Console.WriteLine("Enemy blocks the attack!");
                             }
                             tmphpe = tmphpe - tmpap;
-                            //Console.WriteLine("Player hits for {0}!", tmpap);
-                        }
-                       // else
-                           // Console.WriteLine("Enemy evaded the attack!");
-                    }
-                    //else
-                        //Console.WriteLine("Player misses the target!");
-                    if (tmphpe <= 0)
-                    {
-                        //Console.WriteLine("After the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe);
-                        return true;
-                    }
+                            Console.WriteLine("Player hits for {0}!", tmpap);
+                        }else
+                            Console.WriteLine("Enemy evaded the attack!");
+                    } else
+                        Console.WriteLine("Player misses the target!");
+                    if (tmphpe <= 0) { Console.WriteLine("After the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe); return true; }
                     if (rnd.Next(0, 100) >= miss * 100)
                     {
-                        if (rnd.Next(0, 100) <= enemy.crit * 100)
-                        {
-                            tmpape = tmpape * xcrit;
-                            //Console.WriteLine("Enemy critically hits!");
-                        }
+                        if (rnd.Next(0, 100) <= enemy.crit * 100) { tmpape = tmpape * xcrit; Console.WriteLine("Enemy critically hits!"); }
                         if (rnd.Next(0, 100) >= ev * 100)
                         {
                             if (rnd.Next(0, 100) <= block * 100)
                             {
                                 tmpape = tmpape * xblock;
-                                //Console.WriteLine("Player blocks the attack!");
+                                Console.WriteLine("Player blocks the attack!");
                             }
                             tmphp = tmphp - tmpape;
-                            //Console.WriteLine("Enemy hits for {0}!", tmpape);
-                        }
-                        //else
-                            //Console.WriteLine("Player evaded the attack!");
-                    }
-                   // else
-                        //Console.WriteLine("Enemy misses the target!");
-                    if (tmphp <= 0)
-                    {
-                        //Console.WriteLine("After the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe);
-                        return false;
-                    }
+                            Console.WriteLine("Enemy hits for {0}!", tmpape);
+                        } else
+                            Console.WriteLine("Player evaded the attack!");
+                    } else
+                        Console.WriteLine("Enemy misses the target!");
+                    if (tmphp <= 0) { Console.WriteLine("After the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe); return false; }
                     tmpap = ap;
                     tmpape = enemy.ap;
                     i++;
-                    //Console.WriteLine("My hp={0}, enemy hp={1}, i={2}", tmphp, tmphpe, i);
+                    Console.WriteLine("My hp={0}, enemy hp={1}, i={2}", tmphp, tmphpe, i);
                 }
 
             }
             else//Enemy strikes first
             {
-                //Console.WriteLine("Enemy strikes first");
+                Console.WriteLine("Enemy strikes first");
                 int i = 0;
                 while ((tmphp > 0) && (tmphpe > 0))
                 {
                     if (rnd.Next(0, 100) >= miss * 100)
                     {
-                        if (rnd.Next(0, 100) <= enemy.crit * 100)
-                        {
-                            tmpape = tmpape * xcrit;
-                            //Console.WriteLine("Enemy critically hits!");
-                        }
+                        if (rnd.Next(0, 100) <= enemy.crit * 100) { tmpape = tmpape * xcrit; Console.WriteLine("Enemy critically hits!"); }
                         if (rnd.Next(0, 100) >= ev * 100)
                         {
                             if (rnd.Next(0, 100) <= block * 100)
                             {
                                 tmpape = tmpape * xblock;
-                                //Console.WriteLine("Player blocks the attack!");
+                                Console.WriteLine("Player blocks the attack!");
                             }
                             tmphp = tmphp - tmpape;
-                            //Console.WriteLine("Enemy hits for {0}!", tmpape);
+                            Console.WriteLine("Enemy hits for {0}!", tmpape);
                         }
-                       // else
-                            //Console.WriteLine("Player evaded the attack!");
+                        else
+                            Console.WriteLine("Player evaded the attack!");
                     }
-                    //else
-                       // Console.WriteLine("Enemy misses the target!");
-                    if (tmphp <= 0)
-                    {
-                        //Console.WriteLine("After the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe);
-                        return false;
-                    }
+                    else
+                        Console.WriteLine("Enemy misses the target!");
+                    if (tmphp <= 0) { Console.WriteLine("After the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe); return false; }
                     if (rnd.Next(0, 100) >= miss * 100)
                     {
-                        if (rnd.Next(0, 100) <= crit * 100)
-                        {
-                            tmpap = tmpap * xcrit;
-                            //Console.WriteLine("Player critically hits!");
-                        }
+                        if (rnd.Next(0, 100) <= crit * 100) { tmpap = tmpap * xcrit; Console.WriteLine("Player critically hits!"); }
                         if (rnd.Next(0, 100) >= ev * 100)
                         {
                             if (rnd.Next(0, 100) <= block * 100)
                             {
                                 tmpap = tmpap * xblock;
-                                //Console.WriteLine("Enemy blocks the attack!");
+                                Console.WriteLine("Enemy blocks the attack!");
                             }
                             tmphpe = tmphpe - tmpap;
-                            //Console.WriteLine("Player hits for {0}!", tmpap);
+                            Console.WriteLine("Player hits for {0}!", tmpap);
                         }
-                        //else
-                            //Console.WriteLine("Enemy evaded the attack!");
+                        else
+                            Console.WriteLine("Enemy evaded the attack!");
                     }
-                    //else
-                        //Console.WriteLine("Player misses the target!");
-                    if (tmphpe <= 0)
-                    {
-                        //Console.WriteLine("After the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe);
-                        return true;
-                    }
+                    else
+                        Console.WriteLine("Player misses the target!");
+                    if (tmphpe <= 0) { Console.WriteLine("After the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe); return true; }
                     tmpap = ap;
                     tmpape = enemy.ap;
                     i++;
-                    //Console.WriteLine("My hp={0}, enemy hp={1}, i={2}", tmphp, tmphpe, i);
+                    Console.WriteLine("My hp={0}, enemy hp={1}, i={2}", tmphp, tmphpe, i);
                 }
             }
             if (tmphpe <= 0)
             {
-                //Console.WriteLine("Abnormal return true");
+                Console.WriteLine("Abnormal return true");
                 return true;
             }
             else
             {
-                //Console.WriteLine("Abnormal return false");
+                Console.WriteLine("Abnormal return false");
                 return false;
             }
 
@@ -255,4 +213,5 @@ namespace Gladiator.Controllers
 
 
     }
+
 }

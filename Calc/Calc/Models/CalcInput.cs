@@ -9,9 +9,9 @@ namespace Calc.Models
     public class CalcInput
     {
         [JsonProperty(PropertyName = "a")]
-        public int a;
+        public double a;
 
         [JsonProperty(PropertyName = "b")]
-        public int b;
+        public double b;
     }
 }
