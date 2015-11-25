@@ -1,0 +1,217 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Calc",
+    "description": "Podstawy matematyki przez HTTP!",
+    "version": "1.0"
+  },
+  "host": "calc274102.azurewebsites.net/",
+  "basePath": "/api",
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/add?a={a}&b={b}": {
+      "get": {
+        "description": "Wynik dodawania dwóch liczb.",
+        "operationId": "Dodaj do siebie dwie liczby",
+        "parameters": [
+          {
+            "name": "a",
+            "in": "query",
+            "description": "Pierwsza liczba. Domyślna wartość to <code>2</code>.",
+            "required": true,
+            "default": "2",
+            "enum": [
+              "2"
+            ]
+          },
+          {
+            "name": "b",
+            "in": "query",
+            "description": "Druga liczba. Domyślna wartość to <code>3</code>.",
+            "required": true,
+            "default": "3",
+            "enum": [
+              "3"
+            ]
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/sub?a={a}&b={b}": {
+        "get": {
+            "description": "Wynik odejmowania dwóch liczb.",
+            "operationId": "Odejmij od siebie dwie liczby",
+            "parameters": [
+                {
+                    "name": "a",
+                    "in": "query",
+                    "description": "Pierwsza liczba. Domyślna wartość to <code>5</code>.",
+                    "required": true,
+                    "default": "5",
+                    "enum": [
+                        "5"
+                    ]
+                },
+                {
+                    "name": "b",
+                    "in": "query",
+                    "description": "Druga liczba. Domyślna wartość to <code>1</code>.",
+                    "required": true,
+                    "default": "1",
+                    "enum": [
+                        "1"
+                    ]
+                }
+            ],
+            "responses": { }
+        }
+    },
+    "/sqrt?a={a}": {
+        "get": {
+            "description": "Wynik perwiastku pierwszej liczby.",
+            "operationId": "Wiezm perwiastek pierwszej liczby.",
+            "parameters": [
+                {
+                    "name": "a",
+                    "in": "query",
+                    "description": "Pierwsza liczba. Domyślna wartość to <code>9</code>.",
+                    "required": true,
+                    "default": "9",
+                    "enum": [
+                        "9"
+                    ]
+                }
+            ],
+            "responses": { }
+        }
+    },
+    "/jedenprzezx?a={a}": {
+        "get": {
+            "description": "Wynik 1/x pierwszej liczby.",
+            "operationId": "Wiezm 1/x pierwszej liczby.",
+            "parameters": [
+                {
+                    "name": "a",
+                    "in": "query",
+                    "description": "Pierwsza liczba. Domyślna wartość to <code>10</code>.",
+                    "required": true,
+                    "default": "10",
+                    "enum": [
+                        "10"
+                    ]
+                }
+            ],
+            "responses": { }
+        }
+    },
+    "/xpow2?a={a}": {
+        "get": {
+            "description": "Wynik x^2 pierwszej liczby.",
+            "operationId": "Wiezm x^2 pierwszej liczby.",
+            "parameters": [
+                {
+                    "name": "a",
+                    "in": "query",
+                    "description": "Pierwsza liczba. Domyślna wartość to <code>10</code>.",
+                    "required": true,
+                    "default": "10",
+                    "enum": [
+                        "10"
+                    ]
+                }
+            ],
+            "responses": { }
+        }
+    },
+    "/xpowy?a={a}&b={b}": {
+      "get": {
+        "description": "Wynik x^y.",
+        "operationId": "Podziel x^y",
+        "parameters": [
+          {
+            "name": "a",
+            "in": "query",
+            "description": "Pierwsza liczba. Domyślna wartość to <code>2</code>.",
+            "required": true,
+            "default": "2",
+            "enum": [
+              "2"
+            ]
+          },
+          {
+            "name": "b",
+            "in": "query",
+            "description": "Druga liczba. Domyślna wartość to <code>2</code>.",
+            "required": true,
+            "default": "2",
+            "enum": [
+              "2"
+            ]
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/div?a={a}&b={b}": {
+      "get": {
+        "description": "Wynik dzielenia dwóch liczb.",
+        "operationId": "Podziel przez siebie dwie liczby",
+        "parameters": [
+          {
+            "name": "a",
+            "in": "query",
+            "description": "Pierwsza liczba. Domyślna wartość to <code>8</code>.",
+            "required": true,
+            "default": "8",
+            "enum": [
+              "8"
+            ]
+          },
+          {
+            "name": "b",
+            "in": "query",
+            "description": "Druga liczba. Domyślna wartość to <code>2</code>.",
+            "required": true,
+            "default": "2",
+            "enum": [
+              "2"
+            ]
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/mul?a={a}&b={b}": {
+      "get": {
+        "description": "Wynik mnożenia dwóch liczb.",
+        "operationId": "Pomnóż przez siebie dwie liczby",
+        "parameters": [
+          {
+            "name": "a",
+            "in": "query",
+            "description": "Pierwsza liczba. Domyślna wartość to <code>3</code>.",
+            "required": true,
+            "default": "3",
+            "enum": [
+              "3"
+            ]
+          },
+          {
+            "name": "b",
+            "in": "query",
+            "description": "Druga liczba. Domyślna wartość to <code>6</code>.",
+            "required": true,
+            "default": "6",
+            "enum": [
+              "6"
+            ]
+          }
+        ],
+        "responses": {}
+      }
+    }
+  }
+}
