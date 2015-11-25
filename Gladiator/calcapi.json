@@ -5,7 +5,7 @@
     "description": "Podstawy walki gladiatorskiej przez HTTP!",
     "version": "1.0"
   },
-  "host": "calc274102.azurewebsites.net/",
+  "host": "gladiator274102.azurewebsites.net",
   "basePath": "/api",
   "schemes": [
     "http"

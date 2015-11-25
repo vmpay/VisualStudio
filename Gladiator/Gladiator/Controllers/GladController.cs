@@ -160,7 +160,10 @@ namespace Gladiator.Controllers
                     tmpape = enemy.ap;
                 }
             }
-            return true;
+            if (enemy.hp <= 0)
+                return true;
+            else
+                return false;
 
         }
 
