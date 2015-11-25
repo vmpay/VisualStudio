@@ -19,8 +19,14 @@ namespace Gladiator.Controllers
             Gladiator enemy = new Gladiator(d);
             Gladiator player = new Gladiator(a, b, c);
             bool result;
+            string resultmsg = "Empty";
             result = player.battle(enemy);
-            string xml = string.Format("<result><value>{0}</value><broughtToYouBy>Azure API Management - http://azure.microsoft.com/apim/ </broughtToYouBy></result>", result);
+            if (result)
+                resultmsg = "You win!";
+            else
+                resultmsg = "You lose!";
+            //string xml = string.Format("<result><value>{0}</value><broughtToYouBy>Azure API Management - http://azure.microsoft.com/apim/ </broughtToYouBy></result>", result);
+            string xml = string.Format("{0}", resultmsg);
             HttpResponseMessage response = Request.CreateResponse();
             response.Content = new StringContent(xml, System.Text.Encoding.UTF8, "application/xml");
             return response;
