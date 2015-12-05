@@ -94,15 +94,15 @@ namespace GladiatorTest
             hp = a + basehp;
             ap = b + baseap;
             crit = basecrit + critbonus;
-            //Console.WriteLine("My crit chance={0}", crit);
+            //Console.WriteLine("My crit chance={0:0.00}", crit);
         }
         public bool battle(Gladiator enemy)
         {
             Random rnd = new Random();
             double tmpap = ap, tmphp = hp;
             double tmpape = enemy.ap, tmphpe = enemy.hp;
-            log = string.Format("Before the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe) + Environment.NewLine;
-            //Console.WriteLine("Before the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe);
+            log = string.Format("Before the fight: My hp={0:0.00}, enemy hp={1}", tmphp, tmphpe) + Environment.NewLine;
+            //Console.WriteLine("Before the fight: My hp={0:0.00}, enemy hp={1}", tmphp, tmphpe);
             if ((rnd.Next(0, 100)%2) == 0)//Player.this strikes first
             {
                 int i = 0;
@@ -128,8 +128,8 @@ namespace GladiatorTest
                                 //Console.WriteLine("Enemy blocks the attack!");
                             }
                             tmphpe = tmphpe - tmpap;
-                            log += string.Format("Player hits for {0}!", tmpap) + Environment.NewLine;
-                            //Console.WriteLine("Player hits for {0}!", tmpap);
+                            log += string.Format("Player hits for {0:0.00}!", tmpap) + Environment.NewLine;
+                            //Console.WriteLine("Player hits for {0:0.00}!", tmpap);
                         }else
                             log += "Enemy evaded the attack!" + Environment.NewLine;
                         //Console.WriteLine("Enemy evaded the attack!");
@@ -137,8 +137,8 @@ namespace GladiatorTest
                         log += "Player misses the target!" + Environment.NewLine;
                     //Console.WriteLine("Player misses the target!");
                     if (tmphpe <= 0) {
-                        log += string.Format("After the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe) + Environment.NewLine;
-                        //Console.WriteLine("After the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe);
+                        log += string.Format("After the fight: My hp={0:0.00}, enemy hp={1}", tmphp, tmphpe) + Environment.NewLine;
+                        //Console.WriteLine("After the fight: My hp={0:0.00}, enemy hp={1}", tmphp, tmphpe);
                         return true;
                     }
                     if (rnd.Next(0, 100) >= miss * 100)
@@ -157,8 +157,8 @@ namespace GladiatorTest
                                 //Console.WriteLine("Player blocks the attack!");
                             }
                             tmphp = tmphp - tmpape;
-                            log += string.Format("Enemy hits for {0}!", tmpape) + Environment.NewLine;
-                            //Console.WriteLine("Enemy hits for {0}!", tmpape);
+                            log += string.Format("Enemy hits for {0:0.00}!", tmpape) + Environment.NewLine;
+                            //Console.WriteLine("Enemy hits for {0:0.00}!", tmpape);
                         } else
                             log += "Player evaded the attack!" + Environment.NewLine;
                         //Console.WriteLine("Player evaded the attack!");
@@ -166,15 +166,15 @@ namespace GladiatorTest
                         log += "Enemy misses the target!" + Environment.NewLine;
                     //Console.WriteLine("Enemy misses the target!");
                     if (tmphp <= 0) {
-                        log += string.Format("After the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe) + Environment.NewLine;
-                        //Console.WriteLine("After the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe);
+                        log += string.Format("After the fight: My hp={0:0.00}, enemy hp={1}", tmphp, tmphpe) + Environment.NewLine;
+                        //Console.WriteLine("After the fight: My hp={0:0.00}, enemy hp={1}", tmphp, tmphpe);
                         return false;
                     }
                     tmpap = ap;
                     tmpape = enemy.ap;
                     i++;
-                    log += string.Format("My hp={0}, enemy hp={1}, i={2}", tmphp, tmphpe, i) + Environment.NewLine;
-                    //Console.WriteLine("My hp={0}, enemy hp={1}, i={2}", tmphp, tmphpe, i);
+                    log += string.Format("My hp={0:0.00}, enemy hp={1}, i={2}", tmphp, tmphpe, i) + Environment.NewLine;
+                    //Console.WriteLine("My hp={0:0.00}, enemy hp={1}, i={2}", tmphp, tmphpe, i);
                 }
 
             }
@@ -201,8 +201,8 @@ namespace GladiatorTest
                                 //Console.WriteLine("Player blocks the attack!");
                             }
                             tmphp = tmphp - tmpape;
-                            log += string.Format("Enemy hits for {0}!", tmpape) + Environment.NewLine;
-                            //Console.WriteLine("Enemy hits for {0}!", tmpape);
+                            log += string.Format("Enemy hits for {0:0.00}!", tmpape) + Environment.NewLine;
+                            //Console.WriteLine("Enemy hits for {0:0.00}!", tmpape);
                         }
                         else
                             log += "Player evaded the attack!" + Environment.NewLine;
@@ -212,8 +212,8 @@ namespace GladiatorTest
                         log += "Enemy misses the target!" + Environment.NewLine;
                     //Console.WriteLine("Enemy misses the target!");
                     if (tmphp <= 0) {
-                        log += string.Format("After the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe) + Environment.NewLine;
-                        //Console.WriteLine("After the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe);
+                        log += string.Format("After the fight: My hp={0:0.00}, enemy hp={1}", tmphp, tmphpe) + Environment.NewLine;
+                        //Console.WriteLine("After the fight: My hp={0:0.00}, enemy hp={1}", tmphp, tmphpe);
                         return false;
                     }
                     if (rnd.Next(0, 100) >= miss * 100)
@@ -232,8 +232,8 @@ namespace GladiatorTest
                                 //Console.WriteLine("Enemy blocks the attack!");
                             }
                             tmphpe = tmphpe - tmpap;
-                            log += string.Format("Player hits for {0}!", tmpap) + Environment.NewLine;
-                            //Console.WriteLine("Player hits for {0}!", tmpap);
+                            log += string.Format("Player hits for {0:0.00}!", tmpap) + Environment.NewLine;
+                            //Console.WriteLine("Player hits for {0:0.00}!", tmpap);
                         }
                         else
                             log += "Enemy evaded the attack!" + Environment.NewLine;
@@ -243,15 +243,15 @@ namespace GladiatorTest
                         log += "Player misses the target!" + Environment.NewLine;
                     //Console.WriteLine("Player misses the target!");
                     if (tmphpe <= 0) {
-                        log += string.Format("After the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe) + Environment.NewLine;
-                        //Console.WriteLine("After the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe);
+                        log += string.Format("After the fight: My hp={0:0.00}, enemy hp={1}", tmphp, tmphpe) + Environment.NewLine;
+                        //Console.WriteLine("After the fight: My hp={0:0.00}, enemy hp={1}", tmphp, tmphpe);
                         return true;
                     }
                     tmpap = ap;
                     tmpape = enemy.ap;
                     i++;
-                    log += string.Format("My hp={0}, enemy hp={1}, i={2}", tmphp, tmphpe, i) + Environment.NewLine;
-                    //Console.WriteLine("My hp={0}, enemy hp={1}, i={2}", tmphp, tmphpe, i);
+                    log += string.Format("My hp={0:0.00}, enemy hp={1}, i={2}", tmphp, tmphpe, i) + Environment.NewLine;
+                    //Console.WriteLine("My hp={0:0.00}, enemy hp={1}, i={2}", tmphp, tmphpe, i);
                 }
             }
             if (tmphpe <= 0)
