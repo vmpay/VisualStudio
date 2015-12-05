@@ -20,6 +20,7 @@ namespace Gladiator.Controllers
             Gladiator player = new Gladiator(a, b, c);
             bool result;
             string resultmsg = "Empty";
+            string logresult = "Empty";
             result = player.battle(enemy);
             if (result)
                 resultmsg = "You win!";
@@ -49,6 +50,7 @@ namespace Gladiator.Controllers
         private double basecrit = 0.1;// Base critical strike chance  (BCSC) + MCSCB = Max allowed critical strike chance
         private double basehp = 20;// Base hit points
         private double baseap = 5;// Base attack points
+        private string log = "Empty";
         public Gladiator()
         {
             hp = basehp;
