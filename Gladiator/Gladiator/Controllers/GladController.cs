@@ -107,7 +107,7 @@ namespace Gladiator.Controllers
             Random rnd = new Random();
             double tmpap = ap, tmphp = hp;
             double tmpape = enemy.ap, tmphpe = enemy.hp;
-            log = string.Format("Before the fight: My hp={0:0.00} enemy hp={1:0.00}", tmphp, tmphpe) + "NL";
+            log = string.Format("1. My hp={0:0.00} enemy hp={1:0.00}", tmphp, tmphpe) + "NL";
             //Console.WriteLine("Before the fight: My hp={0:0.00}, enemy hp={1:0.00}", tmphp, tmphpe);
             if ((rnd.Next(0, 100) % 2) == 0)//Player.this strikes first
             {
@@ -187,7 +187,7 @@ namespace Gladiator.Controllers
                     tmpap = ap;
                     tmpape = enemy.ap;
                     i++;
-                    log += string.Format("My hp={0:0.00} enemy hp={1:0.00} Skirmish={2}", tmphp, tmphpe, i) + "NL";
+                    log += string.Format("{2}. My hp={0:0.00} enemy hp={1:0.00}", tmphp, tmphpe, i+1) + "NL";
                     //Console.WriteLine("My hp={0:0.00}, enemy hp={1:0.00} Skirmish={2}", tmphp, tmphpe, i);
                 }
 
@@ -268,7 +268,7 @@ namespace Gladiator.Controllers
                     tmpap = ap;
                     tmpape = enemy.ap;
                     i++;
-                    log += string.Format("My hp={0:0.00} enemy hp={1:0.00} Skirmish={2}", tmphp, tmphpe, i) + "NL";
+                    log += string.Format("{2}. My hp={0:0.00} enemy hp={1:0.00}", tmphp, tmphpe, i+1) + "NL";
                     //Console.WriteLine("My hp={0:0.00}, enemy hp={1:0.00} Skirmish={2}", tmphp, tmphpe, i);
                 }
             }
