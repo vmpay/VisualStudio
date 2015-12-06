@@ -20,16 +20,17 @@ namespace Gladiator.Controllers
             Gladiator player = new Gladiator(a, b, c);
             bool result;
             string resultmsg = "Empty";
-            string logresult = "Empty";
+            //string logresult = "Empty";
             result = player.battle(enemy);
             if (result)
-                resultmsg = "You win!";
+                resultmsg = "01" + player.GetLog();// victory
             else
-                resultmsg = "You lose!";
+                resultmsg = "00" + player.GetLog();// defeat
             //string xml = string.Format("<result><value>{0}</value><broughtToYouBy>Azure API Management - http://azure.microsoft.com/apim/ </broughtToYouBy></result>", result);
             string xml = string.Format("{0}", resultmsg);
             HttpResponseMessage response = Request.CreateResponse();
-            response.Content = new StringContent(xml, System.Text.Encoding.UTF8, "application/xml");
+            //response.Content = new StringContent(xml, System.Text.Encoding.UTF8, "application/xml");
+            response.Content = new StringContent(xml, System.Text.Encoding.UTF8, "text/plain");
             return response;
         }
 
@@ -50,7 +51,7 @@ namespace Gladiator.Controllers
         private double basecrit = 0.1;// Base critical strike chance  (BCSC) + MCSCB = Max allowed critical strike chance
         private double basehp = 20;// Base hit points
         private double baseap = 5;// Base attack points
-        private string log = "Empty";
+        private string log = "Empty";// Fight log
         public Gladiator()
         {
             hp = basehp;
@@ -106,10 +107,12 @@ namespace Gladiator.Controllers
             Random rnd = new Random();
             double tmpap = ap, tmphp = hp;
             double tmpape = enemy.ap, tmphpe = enemy.hp;
-            //Console.WriteLine("Before the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe);
+            log = string.Format("Before the fight: My hp={0:0.00} enemy hp={1:0.00}", tmphp, tmphpe) + "NL";
+            //Console.WriteLine("Before the fight: My hp={0:0.00}, enemy hp={1:0.00}", tmphp, tmphpe);
             if ((rnd.Next(0, 100) % 2) == 0)//Player.this strikes first
             {
                 int i = 0;
+                log += "Player strikes first" + "NL";
                 //Console.WriteLine("Player strikes first");
                 //insert while
                 while ((tmphp > 0) && (tmphpe > 0))
@@ -120,6 +123,7 @@ namespace Gladiator.Controllers
                         if (rnd.Next(0, 100) <= crit * 100)
                         {
                             tmpap = tmpap * xcrit;
+                            log += "Player critically hits!" + "NL";
                             //Console.WriteLine("Player critically hits!");
                         }
                         if (rnd.Next(0, 100) >= ev * 100)
@@ -127,19 +131,24 @@ namespace Gladiator.Controllers
                             if (rnd.Next(0, 100) <= block * 100)
                             {
                                 tmpap = tmpap * xblock;
+                                log += "Enemy blocks the attack!" + "NL";
                                 //Console.WriteLine("Enemy blocks the attack!");
                             }
                             tmphpe = tmphpe - tmpap;
-                            //Console.WriteLine("Player hits for {0}!", tmpap);
+                            log += string.Format("Player hits for {0:0.00}!", tmpap) + "NL";
+                            //Console.WriteLine("Player hits for {0:0.00}!", tmpap);
                         }
-                       // else
-                           // Console.WriteLine("Enemy evaded the attack!");
+                        else
+                            log += "Enemy evaded the attack!" + "NL";
+                        //Console.WriteLine("Enemy evaded the attack!");
                     }
-                    //else
-                        //Console.WriteLine("Player misses the target!");
+                    else
+                        log += "Player misses the target!" + "NL";
+                    //Console.WriteLine("Player misses the target!");
                     if (tmphpe <= 0)
                     {
-                        //Console.WriteLine("After the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe);
+                        log += string.Format("After the fight: My hp={0:0.00} enemy hp={1:0.00}", tmphp, tmphpe) + "NL";
+                        //Console.WriteLine("After the fight: My hp={0:0.00}, enemy hp={1:0.00}", tmphp, tmphpe);
                         return true;
                     }
                     if (rnd.Next(0, 100) >= miss * 100)
@@ -147,6 +156,7 @@ namespace Gladiator.Controllers
                         if (rnd.Next(0, 100) <= enemy.crit * 100)
                         {
                             tmpape = tmpape * xcrit;
+                            log += "Enemy critically hits!" + "NL";
                             //Console.WriteLine("Enemy critically hits!");
                         }
                         if (rnd.Next(0, 100) >= ev * 100)
@@ -154,30 +164,37 @@ namespace Gladiator.Controllers
                             if (rnd.Next(0, 100) <= block * 100)
                             {
                                 tmpape = tmpape * xblock;
+                                log += "Player blocks the attack!" + "NL";
                                 //Console.WriteLine("Player blocks the attack!");
                             }
                             tmphp = tmphp - tmpape;
-                            //Console.WriteLine("Enemy hits for {0}!", tmpape);
+                            log += string.Format("Enemy hits for {0:0.00}!", tmpape) + "NL";
+                            //Console.WriteLine("Enemy hits for {0:0.00}!", tmpape);
                         }
-                        //else
-                            //Console.WriteLine("Player evaded the attack!");
+                        else
+                            log += "Player evaded the attack!" + "NL";
+                        //Console.WriteLine("Player evaded the attack!");
                     }
-                   // else
-                        //Console.WriteLine("Enemy misses the target!");
+                    else
+                        log += "Enemy misses the target!" + "NL";
+                    //Console.WriteLine("Enemy misses the target!");
                     if (tmphp <= 0)
                     {
-                        //Console.WriteLine("After the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe);
+                        log += string.Format("After the fight: My hp={0:0.00} enemy hp={1:0.00}", tmphp, tmphpe) + "NL";
+                        //Console.WriteLine("After the fight: My hp={0:0.00}, enemy hp={1:0.00}", tmphp, tmphpe);
                         return false;
                     }
                     tmpap = ap;
                     tmpape = enemy.ap;
                     i++;
-                    //Console.WriteLine("My hp={0}, enemy hp={1}, i={2}", tmphp, tmphpe, i);
+                    log += string.Format("My hp={0:0.00} enemy hp={1:0.00} Skirmish={2}", tmphp, tmphpe, i) + "NL";
+                    //Console.WriteLine("My hp={0:0.00}, enemy hp={1:0.00} Skirmish={2}", tmphp, tmphpe, i);
                 }
 
             }
             else//Enemy strikes first
             {
+                log += "Enemy strikes first" + "NL";
                 //Console.WriteLine("Enemy strikes first");
                 int i = 0;
                 while ((tmphp > 0) && (tmphpe > 0))
@@ -187,6 +204,7 @@ namespace Gladiator.Controllers
                         if (rnd.Next(0, 100) <= enemy.crit * 100)
                         {
                             tmpape = tmpape * xcrit;
+                            log += "Enemy critically hits!" + "NL";
                             //Console.WriteLine("Enemy critically hits!");
                         }
                         if (rnd.Next(0, 100) >= ev * 100)
@@ -194,19 +212,24 @@ namespace Gladiator.Controllers
                             if (rnd.Next(0, 100) <= block * 100)
                             {
                                 tmpape = tmpape * xblock;
+                                log += "Player blocks the attack!" + "NL";
                                 //Console.WriteLine("Player blocks the attack!");
                             }
                             tmphp = tmphp - tmpape;
-                            //Console.WriteLine("Enemy hits for {0}!", tmpape);
+                            log += string.Format("Enemy hits for {0:0.00}!", tmpape) + "NL";
+                            //Console.WriteLine("Enemy hits for {0:0.00}!", tmpape);
                         }
-                       // else
-                            //Console.WriteLine("Player evaded the attack!");
+                        else
+                            log += "Player evaded the attack!" + "NL";
+                        //Console.WriteLine("Player evaded the attack!");
                     }
-                    //else
-                       // Console.WriteLine("Enemy misses the target!");
+                    else
+                        log += "Enemy misses the target!" + "NL";
+                    //Console.WriteLine("Enemy misses the target!");
                     if (tmphp <= 0)
                     {
-                        //Console.WriteLine("After the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe);
+                        log += string.Format("After the fight: My hp={0:0.00} enemy hp={1:0.00}", tmphp, tmphpe) + "NL";
+                        //Console.WriteLine("After the fight: My hp={0:0.00}, enemy hp={1:0.00}", tmphp, tmphpe);
                         return false;
                     }
                     if (rnd.Next(0, 100) >= miss * 100)
@@ -214,6 +237,7 @@ namespace Gladiator.Controllers
                         if (rnd.Next(0, 100) <= crit * 100)
                         {
                             tmpap = tmpap * xcrit;
+                            log += "Player critically hits!" + "NL";
                             //Console.WriteLine("Player critically hits!");
                         }
                         if (rnd.Next(0, 100) >= ev * 100)
@@ -221,25 +245,31 @@ namespace Gladiator.Controllers
                             if (rnd.Next(0, 100) <= block * 100)
                             {
                                 tmpap = tmpap * xblock;
+                                log += "Enemy blocks the attack!" + "NL";
                                 //Console.WriteLine("Enemy blocks the attack!");
                             }
                             tmphpe = tmphpe - tmpap;
-                            //Console.WriteLine("Player hits for {0}!", tmpap);
+                            log += string.Format("Player hits for {0:0.00}!", tmpap) + "NL";
+                            //Console.WriteLine("Player hits for {0:0.00}!", tmpap);
                         }
-                        //else
-                            //Console.WriteLine("Enemy evaded the attack!");
+                        else
+                            log += "Enemy evaded the attack!" + "NL";
+                        //Console.WriteLine("Enemy evaded the attack!");
                     }
-                    //else
-                        //Console.WriteLine("Player misses the target!");
+                    else
+                        log += "Player misses the target!" + "NL";
+                    //Console.WriteLine("Player misses the target!");
                     if (tmphpe <= 0)
                     {
-                        //Console.WriteLine("After the fight: My hp={0}, enemy hp={1}", tmphp, tmphpe);
+                        log += string.Format("After the fight: My hp={0:0.00} enemy hp={1:0.00}", tmphp, tmphpe) + "NL";
+                        //Console.WriteLine("After the fight: My hp={0:0.00}, enemy hp={1:0.00}", tmphp, tmphpe);
                         return true;
                     }
                     tmpap = ap;
                     tmpape = enemy.ap;
                     i++;
-                    //Console.WriteLine("My hp={0}, enemy hp={1}, i={2}", tmphp, tmphpe, i);
+                    log += string.Format("My hp={0:0.00} enemy hp={1:0.00} Skirmish={2}", tmphp, tmphpe, i) + "NL";
+                    //Console.WriteLine("My hp={0:0.00}, enemy hp={1:0.00} Skirmish={2}", tmphp, tmphpe, i);
                 }
             }
             if (tmphpe <= 0)
@@ -253,6 +283,11 @@ namespace Gladiator.Controllers
                 return false;
             }
 
+        }
+
+        public string GetLog()
+        {
+            return log;
         }
 
 
