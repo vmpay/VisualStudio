@@ -20,5 +20,11 @@ namespace Gladiator.Models
         //Enemy's lvl
         [JsonProperty(PropertyName = "d")]
         public int d;
+        //Login
+        [JsonProperty(PropertyName = "login")]
+        public string login;
+        //Password
+        [JsonProperty(PropertyName = "password")]
+        public string password;
     }
 }

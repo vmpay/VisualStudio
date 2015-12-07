@@ -1,64 +1,94 @@
 {
-  "swagger": "2.0",
-  "info": {
-    "title": "Gladiator",
-    "description": "Podstawy walki gladiatorskiej przez HTTP!",
-    "version": "1.0"
-  },
-  "host": "gladiator274102.azurewebsites.net",
-  "basePath": "/api",
-  "schemes": [
-    "http"
-  ],
-  "paths": {
-    "/fight?a={a}&b={b}&c={c}&d={d}": {
-      "get": {
-        "description": "Wynik walki gladiatorskiej. If true - player wins, else - enemy.",
-        "operationId": "Let the battle BEGIN!",
-        "parameters": [
-          {
-            "name": "a",
-            "in": "query",
-            "description": "Hit points. Domyślna wartość to <code>20</code>.",
-            "required": true,
-            "default": "20",
-            "enum": [
-              "20"
-            ]
-          },
-            {
-                "name": "b",
-                "in": "query",
-                "description": "Attack points. Domyślna wartość to <code>5</code>.",
-                "required": true,
-                "default": "5",
-                "enum": [
-                    "5"
-                ]
-            },
-            {
-            "name": "c",
-            "in": "query",
-            "description": "Critical strike chance bonus. Domyślna wartość to <code>0.1</code>.",
-            "required": true,
-            "default": "0.1",
-            "enum": [
-              "0.1"
-            ]
-          },
-          {
-            "name": "d",
-            "in": "query",
-            "description": "Enenmy lvl. Domyślna wartość to <code>0</code>.",
-            "required": true,
-            "default": "0",
-            "enum": [
-              "0"
-            ]
-          }
-        ],
-        "responses": {}
-      }
+    "swagger": "2.0",
+    "info": {
+        "title": "Gladiator",
+        "description": "Gladiator battles through HTTP!",
+        "version": "1.0"
+    },
+    "host": "gladiator274102.azurewebsites.net",
+    "basePath": "/api",
+    "schemes": [
+        "http"
+    ],
+    "paths": {
+        "/fight?a={a}&b={b}&c={c}&d={d}": {
+            "get": {
+                "description": "Wynik walki gladiatorskiej. If true - player wins, else - enemy.",
+                "operationId": "Let the battle BEGIN!",
+                "parameters": [
+                    {
+                        "name": "a",
+                        "in": "query",
+                        "description": "Hit points. Domyślna wartość to <code>10</code>.",
+                        "required": true,
+                        "default": "10",
+                        "enum": [
+                            "10"
+                        ]
+                    },
+                    {
+                        "name": "b",
+                        "in": "query",
+                        "description": "Attack points. Domyślna wartość to <code>5</code>.",
+                        "required": true,
+                        "default": "5",
+                        "enum": [
+                            "5"
+                        ]
+                    },
+                    {
+                        "name": "c",
+                        "in": "query",
+                        "description": "Critical strike chance bonus. Domyślna wartość to <code>0</code>.",
+                        "required": true,
+                        "default": "0",
+                        "enum": [
+                            "0"
+                        ]
+                    },
+                    {
+                        "name": "d",
+                        "in": "query",
+                        "description": "Enenmy lvl. Domyślna wartość to <code>0</code>.",
+                        "required": true,
+                        "default": "0",
+                        "enum": [
+                            "0"
+                        ]
+                    }
+                ],
+                "responses": { }
+            }
+        },
+
+        "/login?login={login}&password={password}": {
+            "get": {
+                "description": "Sign in operation",
+                "operationId": "Sign In!",
+                "parameters": [
+                    {
+                        "name": "login",
+                        "in": "query",
+                        "description": "Login. Default value is <code>admin@admin.com</code>.",
+                        "required": true,
+                        "default": "admin@admin.com",
+                        "enum": [
+                            "admin@admin.com"
+                        ]
+                    },
+                    {
+                        "name": "password",
+                        "in": "query",
+                        "description": "Password. Default value is<code>123</code>.",
+                        "required": true,
+                        "default": "123",
+                        "enum": [
+                            "123"
+                        ]
+                    }
+                ],
+                "responses": { }
+            }
+        }
     }
-  }
 }

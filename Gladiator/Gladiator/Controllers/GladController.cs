@@ -31,7 +31,26 @@ namespace Gladiator.Controllers
             return response;
         }
 
-    }
+        [Route("api/login")]
+        [HttpGet]
+        public HttpResponseMessage Login([FromUri]string login, [FromUri]string password)
+        {
+            string resultmsg = "Empty";
+            //TODO: Connecto DB and complete login check
+            if ((login=="admin@admin.com")&&(password=="123"))
+            {
+                resultmsg = "01";
+            }
+            else
+            {
+                resultmsg = "00";
+            }
+            HttpResponseMessage response = Request.CreateResponse();
+            response.Content = new StringContent(resultmsg, System.Text.Encoding.UTF8, "text/plain");
+            return response;
+        }
+
+        }
 
     public class Gladiator
     {
