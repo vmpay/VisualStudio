@@ -50,7 +50,43 @@ namespace Gladiator.Controllers
             return response;
         }
 
+        [Route("api/recallpsw")]
+        [HttpGet]
+        public HttpResponseMessage Recallpsw([FromUri]string login)
+        {
+            string resultmsg = "04";
+            //TODO: Connecto DB and complete password recall prcedure
+            // Проверить наличие такого логина
+
+            // Выслать мейл
+
+            // Записать в базу новый пароль
+
+            // Выслать ответ в приложение
+            HttpResponseMessage response = Request.CreateResponse();
+            response.Content = new StringContent(resultmsg, System.Text.Encoding.UTF8, "text/plain");
+            return response;
         }
+
+        [Route("api/signup")]
+        [HttpGet]
+        public HttpResponseMessage Signup([FromUri]string login, [FromUri]string password)
+        {
+            string resultmsg = "04";
+            //TODO: Connecto DB and complete sign up procedure
+            // Проверить наличие такого логина
+
+            // Выслать мейл
+
+            // Записать в базу новый пароль
+
+            // Выслать ответ в приложение
+            HttpResponseMessage response = Request.CreateResponse();
+            response.Content = new StringContent(resultmsg, System.Text.Encoding.UTF8, "text/plain");
+            return response;
+        }
+
+    }
 
     public class Gladiator
     {
