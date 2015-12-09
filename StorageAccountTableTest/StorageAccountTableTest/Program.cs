@@ -23,19 +23,22 @@ namespace StorageAccountTableTest
                 Console.WriteLine("op = {0}", op);
                 switch (op)
             {
-                case 1:
+                case 1: // Create table & insert 2 entities
                     {
-                            // Retrieve the storage account from the connection string
-                            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
-                                ConfigurationManager.AppSettings["StorageConnectionString"]);
+                            try
+                            {
+                                // Retrieve the storage account from the connection string
+                                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                                    ConfigurationManager.AppSettings["StorageConnectionString"]);
+                            
+                                // Create the table client.
+                                CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
 
-                            // Create the table client.
-                            CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
 
-                            // Create the table if it doesn't exist.
-                            CloudTable table = tableClient.GetTableReference("people");
-                            table.CreateIfNotExists();
-
+                                // Create the table if it doesn't exist.
+                                CloudTable table = tableClient.GetTableReference("people");
+                                table.CreateIfNotExists();
+ 
                             // Create the batch operation.
                             TableBatchOperation batchOperation = new TableBatchOperation();
 
@@ -54,14 +57,25 @@ namespace StorageAccountTableTest
                             // Add both customer entities to the batch insert operation.
                             batchOperation.Insert(customer1);
                             batchOperation.Insert(customer2);
-
-                            // Execute the batch operation.
-                            table.ExecuteBatch(batchOperation);
-                            Console.WriteLine("Ceating succesfull.");
+                            try {
+                                // Execute the batch operation.
+                                //table.ExecuteBatch(batchOperation);
+                                Console.WriteLine("Creating succesfull.");
+                            } catch
+                            {
+                                Console.WriteLine("Creating failed. Entity already exists");
+                            }
+                            }
+                            catch
+                            {
+                                Console.WriteLine("Authentification failed.");
+                            }
                             break;
                     }
-                case 2:
+                case 2: // Retrieve Smith
                     {
+                            try
+                            { 
                             // Retrieve the storage account from the connection string.
                             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
                                 ConfigurationManager.AppSettings["StorageConnectionString"]);
@@ -76,15 +90,28 @@ namespace StorageAccountTableTest
                             TableQuery<CustomerEntity> query = new TableQuery<CustomerEntity>().Where(TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, "Smith"));
 
                             // Print the fields for each customer.
-                            foreach (CustomerEntity entity in table.ExecuteQuery(query))
-                        {
-                            Console.WriteLine("{0}, {1}\t{2}\t{3}", entity.PartitionKey, entity.RowKey,
-                                entity.Email, entity.PhoneNumber);
-                        }
-                        break;
+                            try
+                            {
+                                foreach (CustomerEntity entity in table.ExecuteQuery(query))
+                                {
+                                    Console.WriteLine("{0}, {1}\t{2}\t{3}", entity.PartitionKey, entity.RowKey,
+                                        entity.Email, entity.PhoneNumber);
+                                }
+                            } catch 
+                            {
+                                Console.WriteLine("Table not found");
+                            }
+                            }
+                            catch
+                            {
+                                Console.WriteLine("Authentification failed.");
+                            }
+                            break;
                     }
-                    case 3:
+                    case 3: // Retrieve Ben Smith
                         {
+                            try
+                            { 
                             // Retrieve the storage account from the connection string.
                             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
                                 ConfigurationManager.AppSettings["StorageConnectionString"]);
@@ -102,16 +129,29 @@ namespace StorageAccountTableTest
                                     TableOperators.And,
                                     TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.LessThan, "E")));
 
-                            // Loop through the results, displaying information about the entity.
-                            foreach (CustomerEntity entity in table.ExecuteQuery(rangeQuery))
+                            try
                             {
-                                Console.WriteLine("{0}, {1}\t{2}\t{3}", entity.PartitionKey, entity.RowKey,
-                                    entity.Email, entity.PhoneNumber);
+                                // Loop through the results, displaying information about the entity.
+                                foreach (CustomerEntity entity in table.ExecuteQuery(rangeQuery))
+                                {
+                                    Console.WriteLine("{0}, {1}\t{2}\t{3}", entity.PartitionKey, entity.RowKey,
+                                        entity.Email, entity.PhoneNumber);
+                                }
+                            } catch
+                            {
+                                Console.WriteLine("Table not found");
+                            }
+                            }
+                            catch
+                            {
+                                Console.WriteLine("Authentification failed.");
                             }
                             break;
                         }
-                    case 4:
+                    case 4: // Update entity
                         {
+                            try
+                            { 
                             // Retrieve the storage account from the connection string.
                             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
                                 ConfigurationManager.AppSettings["StorageConnectionString"]);
@@ -144,13 +184,19 @@ namespace StorageAccountTableTest
 
                                 Console.WriteLine("Entity updated.");
                             }
-
                             else
                                 Console.WriteLine("Entity could not be retrieved.");
+                            }
+                            catch
+                            {
+                                Console.WriteLine("Authentification failed.");
+                            }
                             break;
                         }
-                    case 5:
+                    case 5: // Insert-or-Replace
                         {
+                            try
+                            { 
                             // Retrieve the storage account from the connection string.
                             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
                                 ConfigurationManager.AppSettings["StorageConnectionString"]);
@@ -183,13 +229,18 @@ namespace StorageAccountTableTest
 
                                 Console.WriteLine("Entity was updated.");
                             }
-
                             else
                                 Console.WriteLine("Entity could not be retrieved.");
+                            }
+                            catch
+                            {
+                                Console.WriteLine("Authentification failed.");
+                            }
                             break;
                         }
-                    case 6:
+                    case 6: // Delete entity
                         {
+                            try { 
                             // Retrieve the storage account from the connection string.
                             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
                                 ConfigurationManager.AppSettings["StorageConnectionString"]);
@@ -217,15 +268,21 @@ namespace StorageAccountTableTest
                                 // Execute the operation.
                                 table.Execute(deleteOperation);
 
-                                Console.WriteLine("Entity deleted.");
-                            }
+                                    Console.WriteLine("Entity deleted.");
+                                }
 
                             else
                                 Console.WriteLine("Could not retrieve the entity.");
+                            }
+                            catch
+                            {
+                                Console.WriteLine("Authentification failed.");
+                            }
                             break;
                         }
-                    case 7:
+                    case 7: // Delete table
                         {
+                            try { 
                             // Retrieve the storage account from the connection string.
                             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
                                 ConfigurationManager.AppSettings["StorageConnectionString"]);
@@ -239,6 +296,11 @@ namespace StorageAccountTableTest
                             // Delete the table it if exists.
                             table.DeleteIfExists();
                             Console.WriteLine("Table deleted.");
+                            }
+                            catch
+                            {
+                                Console.WriteLine("Authentification failed.");
+                            }
                             break;
                         }
                 default:
