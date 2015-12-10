@@ -15,7 +15,75 @@ namespace StorageAccountTableTest
         static void Main(string[] args)
         {
             int op=10;
-            for (int i=0; i<20; i++)
+            string mail = "admin@admin.com", email;
+            string psw = "123", password;
+            azureTable Table1 = new azureTable();
+            for (int i = 0; i < 20; i++)
+            {
+                if (op == 0) break;
+                Console.WriteLine("Choose the option:\n1.Create table users\n2. Insert user\n3. Sign in procedure\n4. Password recall\n5. Update password\n6. Updatelvl +1\n7. RetrieveEntity\n8. Delete user\n9. Delete table");
+                op = Convert.ToInt32(Console.ReadLine());
+                //Console.WriteLine("op = {0}", op);
+                switch (op)
+                {
+                    case 1:
+                        {
+                            Console.WriteLine("CreateTable(users)={0}",Table1.CreateTable("users"));
+                            break;
+                        }
+                    case 2:
+                        {
+                            Console.WriteLine("Table1.InsertEntity={0}", Table1.InsertEntity(mail,psw));
+                            break;
+                        }
+                    case 3:
+                        {
+                            Console.WriteLine("Write down Email and password: ");
+                            email = Console.ReadLine();
+                            password = Console.ReadLine();
+                            Console.WriteLine("Table1.AuthenticateUser={0}", Table1.AuthenticateUser(email, password));
+                            break;
+                        }
+                    case 4:
+                        {
+                            Console.WriteLine("Table1.RecallPassword={0}", Table1.RecallPassword(mail));
+                            break;
+                        }
+                    case 5:
+                        {
+                            Console.WriteLine("Write down password: ");
+                            password = Console.ReadLine();
+                            Console.WriteLine("Table1.UpdatePsw={0}", Table1.UpdatePsw(mail,password));
+                            break;
+                        }
+                    case 6:
+                        {
+                            Console.WriteLine("Table1.UpdateLvl={0}", Table1.UpdateLvl(mail));
+                            break;
+                        }
+                    case 7:
+                        {
+                            Console.WriteLine("Table1.RetrieveEntity={0}", Table1.RetrieveEntity(mail));
+                            break;
+                        }
+                    case 8:
+                        {
+                            Console.WriteLine("Table1.DeleteUser={0}", Table1.DeleteUser(mail));
+                            break;
+                        }
+                    case 9:
+                        {
+                            Console.WriteLine("Table1.DeleteTable={0}", Table1.DeleteTable("users"));
+                            break;
+                        }
+                    default:
+                        Console.WriteLine("Default i={0}", i);
+                        break;
+                }
+                i++;
+            }
+            
+            /*for (int i=0; i<20; i++)
             {
                 if (op == 0) break;
                 Console.WriteLine("Choose the option:\n1.Create table & Insert data\n2. Read data (Partition key)\n3. Read data (partition & row keys)\n4. Update Ben's number\n5. Insert-or-Update (Ben)\n6. Delete entity (Ben)\n7. Delete table");
@@ -44,13 +112,13 @@ namespace StorageAccountTableTest
 
                             // Create a customer entity and add it to the table.
                             CustomerEntity customer1 = new CustomerEntity("Smith", "Jeff");
-                            customer1.Email = "Jeff@contoso.com";
-                            customer1.PhoneNumber = "425-555-0104";
+                            customer1.password = "Jeff@contoso.com";
+                            customer1.lvl = 104;
 
                             // Create another customer entity and add it to the table.
                             CustomerEntity customer2 = new CustomerEntity("Smith", "Ben");
-                            customer2.Email = "Ben@contoso.com";
-                            customer2.PhoneNumber = "425-555-0102";
+                            customer2.password = "Ben@contoso.com";
+                            customer2.lvl = 102;
 
                             // Add check if some entity already exists
 
@@ -95,7 +163,7 @@ namespace StorageAccountTableTest
                                 foreach (CustomerEntity entity in table.ExecuteQuery(query))
                                 {
                                     Console.WriteLine("{0}, {1}\t{2}\t{3}", entity.PartitionKey, entity.RowKey,
-                                        entity.Email, entity.PhoneNumber);
+                                        entity.password, entity.lvl);
                                 }
                             } catch 
                             {
@@ -135,7 +203,7 @@ namespace StorageAccountTableTest
                                 foreach (CustomerEntity entity in table.ExecuteQuery(rangeQuery))
                                 {
                                     Console.WriteLine("{0}, {1}\t{2}\t{3}", entity.PartitionKey, entity.RowKey,
-                                        entity.Email, entity.PhoneNumber);
+                                        entity.password, entity.lvl);
                                 }
                             } catch
                             {
@@ -174,7 +242,7 @@ namespace StorageAccountTableTest
                             if (updateEntity != null)
                             {
                                 // Change the phone number.
-                                updateEntity.PhoneNumber = "425-555-0105";
+                                updateEntity.lvl = 105;
 
                                 // Create the InsertOrReplace TableOperation.
                                 TableOperation updateOperation = TableOperation.Replace(updateEntity);
@@ -219,7 +287,7 @@ namespace StorageAccountTableTest
                             if (updateEntity != null)
                             {
                                 // Change the phone number.
-                                updateEntity.PhoneNumber = "425-555-1234";
+                                updateEntity.lvl = 234;
 
                                 // Create the InsertOrReplace TableOperation.
                                 TableOperation insertOrReplaceOperation = TableOperation.InsertOrReplace(updateEntity);
@@ -310,7 +378,7 @@ namespace StorageAccountTableTest
                     }
             }
                 Console.WriteLine("i={0}", i);
-            }
+            }*/
             op = Console.Read();
 
 
@@ -321,16 +389,451 @@ namespace StorageAccountTableTest
 
     public class CustomerEntity : TableEntity
     {
-        public CustomerEntity(string lastName, string firstName)
+        public CustomerEntity(string login, string domain)
         {
-            this.PartitionKey = lastName;
-            this.RowKey = firstName;
+            this.PartitionKey = login;
+            this.RowKey = domain;
         }
 
         public CustomerEntity() { }
 
-        public string Email { get; set; }
+        public string password { get; set; }
 
-        public string PhoneNumber { get; set; }
+        public int lvl { get; set; }
+    }
+
+    public class azureTable
+    {
+        private string tableName;
+        private string login;
+        private string domain;
+        private string password;
+        private int lvl;
+
+        public azureTable()
+        {
+            tableName = "users";
+        }
+
+        public string CreateTable(string name)
+        {
+            string result = "CODEempty";
+            try
+            {
+                tableName = name;
+                // Retrieve the storage account from the connection string
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                    ConfigurationManager.AppSettings["StorageConnectionString"]);
+
+                // Create the table client.
+                CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+
+
+                // Create the table if it doesn't exist.
+                CloudTable table = tableClient.GetTableReference(tableName);
+                table.CreateIfNotExists();
+                result = "CODETable has been created.";
+            } catch
+            {
+                result = "CODEAuthentification failed.";
+            }
+            return result;
+        }
+
+        public string InsertEntity (string email, string psw)
+        {
+            string result = "CODEEmpty";
+            try
+            {
+                password = psw;
+                string[] tmp = email.Split('@');
+                login = tmp[0];
+                domain = tmp[1];
+                // Retrieve the storage account from the connection string
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                ConfigurationManager.AppSettings["StorageConnectionString"]);
+
+                // Create the table client.
+                CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+
+                // Create the CloudTable object that represents the "people" table.
+                CloudTable table = tableClient.GetTableReference(tableName);
+
+                // Create a new customer entity.
+                CustomerEntity customer = new CustomerEntity(login, domain);
+                customer.password = psw;
+                customer.lvl = 0;
+
+                // Create the TableOperation object that inserts the customer entity.
+                TableOperation insertOperation = TableOperation.Insert(customer);
+
+                try {
+                    // Execute the insert operation.
+                    table.Execute(insertOperation);
+                    result = "CODECreating succesfull.";
+                } catch
+                {
+                    result = "CODECreating failed. Entity already exists or Table not found.";
+                }
+            } catch
+            {
+                result = "CODEAuthentification failed.";
+            }
+            return result;
+        }
+
+        public string RetrieveEntity (string email)
+        {
+            string result = "CODEEmpty";
+            try
+            {
+                string[] tmp = email.Split('@');
+                login = tmp[0];
+                domain = tmp[1];
+                // Retrieve the storage account from the connection string.
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                    ConfigurationManager.AppSettings["StorageConnectionString"]);
+
+                // Create the table client.
+                CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+
+                // Create the CloudTable object that represents the "people" table.
+                CloudTable table = tableClient.GetTableReference(tableName);
+
+                // Create the table query.
+                TableQuery<CustomerEntity> rangeQuery = new TableQuery<CustomerEntity>().Where(
+                    TableQuery.CombineFilters(
+                        TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, login),
+                        TableOperators.And,
+                        TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.Equal, domain)));
+
+                try
+                {
+                    int i = 0;
+                    // Loop through the results, displaying information about the entity.
+                    foreach (CustomerEntity entity in table.ExecuteQuery(rangeQuery))
+                    {
+                        Console.WriteLine("{0}@{1}\t{2}\t{3}", entity.PartitionKey, entity.RowKey,
+                            entity.password, entity.lvl);
+                        result = string.Format("CODE{0}@{1}\t{2}\t{3}", entity.PartitionKey, entity.RowKey,
+                            entity.password, entity.lvl);
+                        i++;
+                    }
+                    if (i==0)
+                    {
+                        result = "CODENo such entity exists.";
+                    }
+                }
+                catch
+                {
+                    result = "CODETable not found.";
+                    Console.WriteLine("Table not found.");
+                }
+            }
+            catch
+            {
+                result = "CODEAuthentification failed.";
+                Console.WriteLine("Authentification failed.");
+            }
+            return result;
+        }
+        
+        public string AuthenticateUser(string email, string psw)
+        {
+            string result = "CODEEmpty";
+            try
+            {
+                string[] tmp = email.Split('@');
+                login = tmp[0];
+                domain = tmp[1];
+                // Retrieve the storage account from the connection string.
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                    ConfigurationManager.AppSettings["StorageConnectionString"]);
+
+                // Create the table client.
+                CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+
+                // Create the CloudTable object that represents the "people" table.
+                CloudTable table = tableClient.GetTableReference(tableName);
+
+                // Create the table query.
+                TableQuery<CustomerEntity> rangeQuery = new TableQuery<CustomerEntity>().Where(
+                    TableQuery.CombineFilters(
+                        TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, login),
+                        TableOperators.And,
+                        TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.Equal, domain)));
+
+                try
+                {
+                    int i = 0;
+                    // Loop through the results, displaying information about the entity.
+                    foreach (CustomerEntity entity in table.ExecuteQuery(rangeQuery))
+                    {
+                        if (entity.password == psw)
+                            result = string.Format("CODE{0}", entity.lvl); // login succesfull
+                        else
+                            result = "CODELogin failed";// login failed
+                        i++;
+                    }
+                    if (i == 0)
+                    {
+                        result = "CODENo such entity exists.";
+                    }
+                }
+                catch
+                {
+                    result = "CODETable not found.";
+                    //Console.WriteLine("Table not found.");
+                }
+            }
+            catch
+            {
+                result = "CODEAuthentification failed.";
+                //Console.WriteLine("Authentification failed.");
+            }
+            return result;
+        }
+
+        public string RecallPassword (string email) // Test hard or die trying
+        {
+            string result = "CODEEmpty";
+            try {
+                string[] tmp = email.Split('@');
+                login = tmp[0];
+                domain = tmp[1];
+                // Retrieve the storage account from the connection string.
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                 ConfigurationManager.AppSettings["StorageConnectionString"]);
+
+            // Create the table client.
+            CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+
+            // Create the CloudTable that represents the "people" table.
+            CloudTable table = tableClient.GetTableReference(tableName);
+
+            // Define the query, and select only the Email property.
+            TableQuery<DynamicTableEntity> projectionQuery = new TableQuery<DynamicTableEntity>().Select(
+                new string[] { "password" }).Where(
+                    TableQuery.CombineFilters(
+                        TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, login),
+                        TableOperators.And,
+                        TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.Equal, domain)));
+
+            // Define an entity resolver to work with the entity after retrieval.
+            EntityResolver<string> resolver = (pk, rk, ts, props, etag) => props.ContainsKey("password") ? props["password"].StringValue : null;
+            try
+            {
+                    int i = 0;
+            foreach (string projectedPassword in table.ExecuteQuery(projectionQuery, resolver, null, null))
+            {
+                        result = projectedPassword;
+                        //Console.WriteLine(projectedPassword);
+                        i++;
+            }
+                    if (i == 0)
+                        result = "CODENo such login";
+            }
+            catch
+            {
+                result = "CODETable not found.";
+                //Console.WriteLine("Table not found.");
+            }
+        }
+            catch
+            {
+                result = "CODEAuthentification failed.";
+                //Console.WriteLine("Authentification failed.");
+            }
+
+
+            return result;
+        }
+
+        public string UpdateLvl (string email)
+        {
+            string result = "CODEEmpty";
+            try
+            {
+                string[] tmp = email.Split('@');
+                login = tmp[0];
+                domain = tmp[1];
+                // Retrieve the storage account from the connection string.
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                    ConfigurationManager.AppSettings["StorageConnectionString"]);
+
+                // Create the table client.
+                CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+
+                // Create the CloudTable object that represents the "people" table.
+                CloudTable table = tableClient.GetTableReference(tableName);
+
+                // Create a retrieve operation that takes a customer entity.
+                TableOperation retrieveOperation = TableOperation.Retrieve<CustomerEntity>(login, domain);
+
+                // Execute the operation.
+                TableResult retrievedResult = table.Execute(retrieveOperation);
+
+                // Assign the result to a CustomerEntity object.
+                CustomerEntity updateEntity = (CustomerEntity)retrievedResult.Result;
+
+                if (updateEntity != null)
+                {
+                    // Change the phone number.
+                    updateEntity.lvl++;
+
+                    // Create the InsertOrReplace TableOperation.
+                    TableOperation updateOperation = TableOperation.Replace(updateEntity);
+
+                    // Execute the operation.
+                    table.Execute(updateOperation);
+
+                    //Console.WriteLine("Entity updated.");
+                    result = "CODELevel updated.";
+                }
+                else
+                    result = "CODEEntity could not be retrieved.";
+                    //Console.WriteLine("CODEEntity could not be retrieved.");
+            }
+            catch
+            {
+                result = "CODEAuthentification failed.";
+                //Console.WriteLine("CODEAuthentification failed.");
+            }
+            return result;
+        }
+
+        public string UpdatePsw (string email, string psw)
+        {
+            string result = "CODEEmpty";
+            try
+            {
+                string[] tmp = email.Split('@');
+                login = tmp[0];
+                domain = tmp[1];
+                // Retrieve the storage account from the connection string.
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                    ConfigurationManager.AppSettings["StorageConnectionString"]);
+
+                // Create the table client.
+                CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+
+                // Create the CloudTable object that represents the "people" table.
+                CloudTable table = tableClient.GetTableReference(tableName);
+
+                // Create a retrieve operation that takes a customer entity.
+                TableOperation retrieveOperation = TableOperation.Retrieve<CustomerEntity>(login, domain);
+
+                // Execute the operation.
+                TableResult retrievedResult = table.Execute(retrieveOperation);
+
+                // Assign the result to a CustomerEntity object.
+                CustomerEntity updateEntity = (CustomerEntity)retrievedResult.Result;
+
+                if (updateEntity != null)
+                {
+                    // Change the phone number.
+                    updateEntity.password = psw;
+
+                    // Create the InsertOrReplace TableOperation.
+                    TableOperation updateOperation = TableOperation.Replace(updateEntity);
+
+                    // Execute the operation.
+                    table.Execute(updateOperation);
+
+                    //Console.WriteLine("Entity updated.");
+                    result = "CODEPassword updated.";
+                }
+                else
+                    result = "CODEEntity could not be retrieved.";
+                    //Console.WriteLine("CODEEntity could not be retrieved.");
+            }
+            catch
+            {
+                result = "CODEAuthentification failed.";
+                //Console.WriteLine("CODEAuthentification failed.");
+            }
+            return result;
+        }
+
+        public string DeleteUser (string email)
+        {
+            string result = "CODEEmpty";
+            try
+            {
+                string[] tmp = email.Split('@');
+                login = tmp[0];
+                domain = tmp[1];
+                // Retrieve the storage account from the connection string.
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                    ConfigurationManager.AppSettings["StorageConnectionString"]);
+
+                // Create the table client.
+                CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+
+                // Create the CloudTable that represents the "people" table.
+                CloudTable table = tableClient.GetTableReference(tableName);
+
+                // Create a retrieve operation that expects a customer entity.
+                TableOperation retrieveOperation = TableOperation.Retrieve<CustomerEntity>(login, domain);
+
+                // Execute the operation.
+                TableResult retrievedResult = table.Execute(retrieveOperation);
+
+                // Assign the result to a CustomerEntity.
+                CustomerEntity deleteEntity = (CustomerEntity)retrievedResult.Result;
+
+                // Create the Delete TableOperation.
+                if (deleteEntity != null)
+                {
+                    TableOperation deleteOperation = TableOperation.Delete(deleteEntity);
+
+                    // Execute the operation.
+                    table.Execute(deleteOperation);
+
+                    result = "CODEUser deleted.";
+                    //Console.WriteLine("Entity deleted.");
+                }
+
+                else
+                    result = "CODECould not retrieve the entity.";
+                    //Console.WriteLine("Could not retrieve the entity.");
+            }
+            catch
+            {
+                result = "CODEAuthentification failed.";
+                //Console.WriteLine("Authentification failed.");
+            }
+            return result;
+        }
+
+        public string DeleteTable (string name)
+        {
+            string result = "CODEEmpty";
+            try
+            {
+                // Retrieve the storage account from the connection string.
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                    ConfigurationManager.AppSettings["StorageConnectionString"]);
+
+                // Create the table client.
+                CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+
+                // Create the CloudTable that represents the "people" table.
+                CloudTable table = tableClient.GetTableReference(name);
+
+                // Delete the table it if exists.
+                table.DeleteIfExists();
+                result = "CODETable deleted.";
+                //Console.WriteLine("Table deleted.");
+            }
+            catch
+            {
+                result = "CODEAuthentification failed.";
+                //Console.WriteLine("Authentification failed.");
+            }
+            return result;
+        }
+
+        
     }
 }
