@@ -21,7 +21,7 @@ namespace StorageAccountTableTest
             for (int i = 0; i < 20; i++)
             {
                 if (op == 0) break;
-                Console.WriteLine("Choose the option:\n1.Create table users\n2. Insert user\n3. Sign in procedure\n4. Password recall\n5. Update password\n6. Updatelvl +1\n7. RetrieveEntity\n8. Delete user\n9. Delete table");
+                Console.WriteLine("Choose the option:\n1.Create table users\n2. Insert user\n3. Sign in procedure\n4. Password recall\n5. Update password\n6. Updatelvl +1\n7. RetrieveEntity\n8. Delete user\n9. Delete table\n10. Retrieve all entities");
                 op = Convert.ToInt32(Console.ReadLine());
                 //Console.WriteLine("op = {0}", op);
                 switch (op)
@@ -33,7 +33,10 @@ namespace StorageAccountTableTest
                         }
                     case 2:
                         {
-                            Console.WriteLine("Table1.InsertEntity={0}", Table1.InsertEntity(mail,psw));
+                            Console.WriteLine("Write down Email and password: ");
+                            email = Console.ReadLine();
+                            password = Console.ReadLine();
+                            Console.WriteLine("Table1.InsertEntity={0}", Table1.InsertEntity(email,password));
                             break;
                         }
                     case 3:
@@ -74,6 +77,11 @@ namespace StorageAccountTableTest
                     case 9:
                         {
                             Console.WriteLine("Table1.DeleteTable={0}", Table1.DeleteTable("users"));
+                            break;
+                        }
+                    case 10:
+                        {
+                            Console.WriteLine("Table1.RetrieveAllEntities=\n{0}", Table1.RetrieveAllEntities());
                             break;
                         }
                     default:
@@ -428,9 +436,13 @@ namespace StorageAccountTableTest
                 // Create the table client.
                 CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
 
-
                 // Create the table if it doesn't exist.
                 CloudTable table = tableClient.GetTableReference(tableName);
+                if (table.Exists())
+                {
+                    result = "CODETable already exists.";
+                    return result;
+                }
                 table.CreateIfNotExists();
                 result = "CODETable has been created.";
             } catch
@@ -458,6 +470,11 @@ namespace StorageAccountTableTest
 
                 // Create the CloudTable object that represents the "people" table.
                 CloudTable table = tableClient.GetTableReference(tableName);
+                if (!table.Exists())
+                {
+                    result = "CODETable not found.";
+                    return result;
+                }
 
                 // Create a new customer entity.
                 CustomerEntity customer = new CustomerEntity(login, domain);
@@ -466,15 +483,28 @@ namespace StorageAccountTableTest
 
                 // Create the TableOperation object that inserts the customer entity.
                 TableOperation insertOperation = TableOperation.Insert(customer);
-
-                try {
+            result = this.RetrieveEntity(email);
+            if (result.Equals("CODENo such entity exists."))
+            {
+                try
+                {
                     // Execute the insert operation.
                     table.Execute(insertOperation);
                     result = "CODECreating succesfull.";
-                } catch
-                {
-                    result = "CODECreating failed. Entity already exists or Table not found.";
                 }
+                catch
+                {
+                    result = "CODECreating failed. Entity already exists.";
+                    //result = "CODEAuthentification failed.";
+                }
+            }
+            else
+            {
+                if (result.StartsWith("CODR"))
+                {
+                    result = "CODECreating failed. Entity already exists";
+                }
+            }
             } catch
             {
                 result = "CODEAuthentification failed.";
@@ -499,6 +529,11 @@ namespace StorageAccountTableTest
 
                 // Create the CloudTable object that represents the "people" table.
                 CloudTable table = tableClient.GetTableReference(tableName);
+                if (!table.Exists())
+                {
+                    result = "CODETable not found.";
+                    return result;
+                }
 
                 // Create the table query.
                 TableQuery<CustomerEntity> rangeQuery = new TableQuery<CustomerEntity>().Where(
@@ -507,27 +542,29 @@ namespace StorageAccountTableTest
                         TableOperators.And,
                         TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.Equal, domain)));
 
-                try
+                int i = 0;
+                result = "";
+                
+                // Loop through the results, displaying information about the entity.
+                foreach (CustomerEntity entity in table.ExecuteQuery(rangeQuery))
                 {
-                    int i = 0;
-                    // Loop through the results, displaying information about the entity.
-                    foreach (CustomerEntity entity in table.ExecuteQuery(rangeQuery))
+                    try
                     {
-                        Console.WriteLine("{0}@{1}\t{2}\t{3}", entity.PartitionKey, entity.RowKey,
-                            entity.password, entity.lvl);
-                        result = string.Format("CODE{0}@{1}\t{2}\t{3}", entity.PartitionKey, entity.RowKey,
+                        // Console.WriteLine("{0}@{1}\t{2}\t{3}\n", entity.PartitionKey, entity.RowKey,
+                        //entity.password, entity.lvl);
+                        result = string.Format("CODR{0}@{1}\t{2}\t{3}\n", entity.PartitionKey, entity.RowKey,                        
                             entity.password, entity.lvl);
                         i++;
                     }
-                    if (i==0)
+                    catch
                     {
-                        result = "CODENo such entity exists.";
+                        result = "CODETable not found.";
+                        Console.WriteLine("Table not found.");
                     }
                 }
-                catch
+                if (i==0)
                 {
-                    result = "CODETable not found.";
-                    Console.WriteLine("Table not found.");
+                    result = "CODENo such entity exists.";
                 }
             }
             catch
@@ -555,6 +592,11 @@ namespace StorageAccountTableTest
 
                 // Create the CloudTable object that represents the "people" table.
                 CloudTable table = tableClient.GetTableReference(tableName);
+                if (!table.Exists())
+                {
+                    result = "CODETable not found.";
+                    return result;
+                }
 
                 // Create the table query.
                 TableQuery<CustomerEntity> rangeQuery = new TableQuery<CustomerEntity>().Where(
@@ -563,28 +605,30 @@ namespace StorageAccountTableTest
                         TableOperators.And,
                         TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.Equal, domain)));
 
-                try
-                {
+                
                     int i = 0;
                     // Loop through the results, displaying information about the entity.
                     foreach (CustomerEntity entity in table.ExecuteQuery(rangeQuery))
                     {
-                        if (entity.password == psw)
-                            result = string.Format("CODE{0}", entity.lvl); // login succesfull
-                        else
-                            result = "CODELogin failed";// login failed
-                        i++;
+                        try
+                        {
+                            if (entity.password == psw)
+                                result = string.Format("CODE{0}", entity.lvl); // login succesfull
+                            else
+                                result = "CODELogin failed. Wrong password.";// login failed
+                            i++;
+                        }
+                        catch
+                        {
+                            result = "CODETable not found.";
+                            //Console.WriteLine("Table not found.");
+                        }
                     }
                     if (i == 0)
                     {
-                        result = "CODENo such entity exists.";
+                        result = "CODELogin failed. No such entity exists.";
                     }
-                }
-                catch
-                {
-                    result = "CODETable not found.";
-                    //Console.WriteLine("Table not found.");
-                }
+                
             }
             catch
             {
@@ -610,9 +654,14 @@ namespace StorageAccountTableTest
 
             // Create the CloudTable that represents the "people" table.
             CloudTable table = tableClient.GetTableReference(tableName);
+                if (!table.Exists())
+                {
+                    result = "CODETable not found.";
+                    return result;
+                }
 
-            // Define the query, and select only the Email property.
-            TableQuery<DynamicTableEntity> projectionQuery = new TableQuery<DynamicTableEntity>().Select(
+                // Define the query, and select only the Email property.
+                TableQuery<DynamicTableEntity> projectionQuery = new TableQuery<DynamicTableEntity>().Select(
                 new string[] { "password" }).Where(
                     TableQuery.CombineFilters(
                         TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, login),
@@ -621,23 +670,25 @@ namespace StorageAccountTableTest
 
             // Define an entity resolver to work with the entity after retrieval.
             EntityResolver<string> resolver = (pk, rk, ts, props, etag) => props.ContainsKey("password") ? props["password"].StringValue : null;
-            try
-            {
+            
                     int i = 0;
             foreach (string projectedPassword in table.ExecuteQuery(projectionQuery, resolver, null, null))
             {
+                    try
+                    {
                         result = projectedPassword;
                         //Console.WriteLine(projectedPassword);
                         i++;
+                    }
+                    catch
+                    {
+                        result = "CODETable not found.";
+                        //Console.WriteLine("Table not found.");
+                    }
             }
                     if (i == 0)
                         result = "CODENo such login";
-            }
-            catch
-            {
-                result = "CODETable not found.";
-                //Console.WriteLine("Table not found.");
-            }
+            
         }
             catch
             {
@@ -666,6 +717,11 @@ namespace StorageAccountTableTest
 
                 // Create the CloudTable object that represents the "people" table.
                 CloudTable table = tableClient.GetTableReference(tableName);
+                if (!table.Exists())
+                {
+                    result = "CODETable not found.";
+                    return result;
+                }
 
                 // Create a retrieve operation that takes a customer entity.
                 TableOperation retrieveOperation = TableOperation.Retrieve<CustomerEntity>(login, domain);
@@ -719,6 +775,11 @@ namespace StorageAccountTableTest
 
                 // Create the CloudTable object that represents the "people" table.
                 CloudTable table = tableClient.GetTableReference(tableName);
+                if (!table.Exists())
+                {
+                    result = "CODETable not found.";
+                    return result;
+                }
 
                 // Create a retrieve operation that takes a customer entity.
                 TableOperation retrieveOperation = TableOperation.Retrieve<CustomerEntity>(login, domain);
@@ -772,6 +833,11 @@ namespace StorageAccountTableTest
 
                 // Create the CloudTable that represents the "people" table.
                 CloudTable table = tableClient.GetTableReference(tableName);
+                if (!table.Exists())
+                {
+                    result = "CODETable not found.";
+                    return result;
+                }
 
                 // Create a retrieve operation that expects a customer entity.
                 TableOperation retrieveOperation = TableOperation.Retrieve<CustomerEntity>(login, domain);
@@ -820,6 +886,11 @@ namespace StorageAccountTableTest
 
                 // Create the CloudTable that represents the "people" table.
                 CloudTable table = tableClient.GetTableReference(name);
+                if (!table.Exists())
+                {
+                    result = "CODETable not found.";
+                    return result;
+                }
 
                 // Delete the table it if exists.
                 table.DeleteIfExists();
@@ -834,6 +905,61 @@ namespace StorageAccountTableTest
             return result;
         }
 
-        
+        public string RetrieveAllEntities()
+        {
+            string result = "CODEEmpty";
+            try
+            {
+                // Retrieve the storage account from the connection string.
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                    ConfigurationManager.AppSettings["StorageConnectionString"]);
+
+                // Create the table client.
+                CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+
+                // Create the CloudTable object that represents the "people" table.
+                CloudTable table = tableClient.GetTableReference(tableName);
+                if (!table.Exists())
+                {
+                    result = "CODETable not found.";
+                    return result;
+                }
+
+                // Create the table query.
+                TableQuery<CustomerEntity> rangeQuery = new TableQuery<CustomerEntity>();
+
+                int i = 0;
+                result = "CODR";
+
+                // Loop through the results, displaying information about the entity.
+                foreach (CustomerEntity entity in table.ExecuteQuery(rangeQuery))
+                {
+                    try
+                    {
+                        // Console.WriteLine("{0}@{1}\t{2}\t{3}\n", entity.PartitionKey, entity.RowKey,
+                        //entity.password, entity.lvl);
+                        result = string.Format("{0}{1}@{2}\t{3}\t{4}\n", result, entity.PartitionKey, entity.RowKey,
+                            entity.password, entity.lvl);
+                        i++;
+                    }
+                    catch
+                    {
+                        result = "CODETable not found.";
+                        Console.WriteLine("Table not found.");
+                    }
+                }
+                if (i == 0)
+                {
+                    result = "CODENo entities found.";
+                }
+            }
+            catch
+            {
+                result = "CODEAuthentification failed.";
+                Console.WriteLine("Authentification failed.");
+            }
+            return result;
+        }
+
     }
 }
