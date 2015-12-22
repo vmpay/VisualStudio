@@ -8,17 +8,43 @@ using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Table;
 using System.Configuration;
 
+/*********************************************
+    Error codes:
+    0? - Ingame message
+    00 - Defeat
+    01 - Victory
+    02 - Cannot connect to the server
+    1? - User level message
+    10 - Entity is added
+    11 - Entity already exists
+    12 - You've signed in. Your lvl is LVL
+    13 - Password updated.
+    14 - Entity can't be retreived
+    15 - Incorrect password
+    16 - Recovery password mail has been sent to you
+    2? - Service information
+    20 - Your lvl is increased
+    21 - Entity is deleted
+    22 - Table is deleted
+    3? - Technical errors. Programmers should solve them
+    30 - Table is created succesfully
+    31 - Table already exists
+    32 - Table not found
+    33 - Something goes wrong  - Empty code
+    34 - Authentification failed. Check Primary & Secondary keys
+*********************************************/
+
 namespace StorageAccountTableTest
 {
     class Program
     {
         static void Main(string[] args)
         {
-            int op=10;
+            int op=100;
             string mail = "admin@admin.com", email;
             string psw = "123", password;
             azureTable Table1 = new azureTable();
-            for (int i = 0; i < 20; i++)
+            for (int i = 0; i < 200; i++)
             {
                 if (op == 0) break;
                 Console.WriteLine("Choose the option:\n1.Create table users\n2. Insert user\n3. Sign in procedure\n4. Password recall\n5. Update password\n6. Updatelvl +1\n7. RetrieveEntity\n8. Delete user\n9. Delete table\n10. Retrieve all entities");
@@ -687,7 +713,7 @@ namespace StorageAccountTableTest
                     }
             }
                     if (i == 0)
-                        result = "CODENo such login";
+                        result = "CODEEntity could not be retrieved.";
             
         }
             catch
