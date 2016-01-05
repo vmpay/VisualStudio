@@ -3,7 +3,7 @@
     "info": {
         "title": "Gladiator",
         "description": "Gladiator battles through HTTP!",
-        "version": "1.0"
+        "version": "2.0"
     },
     "host": "gladiator274102.azurewebsites.net",
     "basePath": "/api",
@@ -11,11 +11,21 @@
         "http"
     ],
     "paths": {
-        "/fight?a={a}&b={b}&c={c}&d={d}": {
+        "/fight?login={login}&a={a}&b={b}&c={c}&d={d}": {
             "get": {
                 "description": "Wynik walki gladiatorskiej. If true - player wins, else - enemy.",
                 "operationId": "Let the battle BEGIN!",
                 "parameters": [
+                    {
+                        "name": "login",
+                        "in": "query",
+                        "description": "Login. Default value is <code>admin@admin.com</code>.",
+                        "required": true,
+                        "default": "admin@admin.com",
+                        "enum": [
+                            "admin@admin.com"
+                        ]
+                    },
                     {
                         "name": "a",
                         "in": "query",
@@ -65,6 +75,56 @@
             "get": {
                 "description": "Sign in operation",
                 "operationId": "Sign In!",
+                "parameters": [
+                    {
+                        "name": "login",
+                        "in": "query",
+                        "description": "Login. Default value is <code>admin@admin.com</code>.",
+                        "required": true,
+                        "default": "admin@admin.com",
+                        "enum": [
+                            "admin@admin.com"
+                        ]
+                    },
+                    {
+                        "name": "password",
+                        "in": "query",
+                        "description": "Password. Default value is<code>123</code>.",
+                        "required": true,
+                        "default": "123",
+                        "enum": [
+                            "123"
+                        ]
+                    }
+                ],
+                "responses": { }
+            }
+        },
+
+        "/recallpsw?login={login}": {
+            "get": {
+                "description": "Recalling password via sending mail.",
+                "operationId": "Recall password!",
+                "parameters": [
+                    {
+                        "name": "login",
+                        "in": "query",
+                        "description": "Login. Default value is <code>admin@admin.com</code>.",
+                        "required": true,
+                        "default": "admin@admin.com",
+                        "enum": [
+                            "admin@admin.com"
+                        ]
+                    }
+                ],
+                "responses": { }
+            }
+        },
+
+        "/signup?login={login}&password={password}": {
+            "get": {
+                "description": "User's registration",
+                "operationId": "Sign Up!",
                 "parameters": [
                     {
                         "name": "login",

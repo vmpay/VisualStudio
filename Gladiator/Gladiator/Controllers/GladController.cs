@@ -4,9 +4,41 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Table;
 using System.IO;
 using System.Web;
 using Gladiator.Models;
+using System.Configuration;
+using System.Net.Mail;
+
+/*********************************************
+    Error codes:
+    0? - Ingame message
+    00 - Defeat
+    01 - Victory
+    02 - Cannot connect to the server
+    1? - User level message
+    10 - Entity is added
+    11 - Entity already exists
+    12 - You've signed in. Your lvl is LVL
+    13 - Password updated.
+    14 - Entity can't be retreived
+    15 - Incorrect password
+    16 - Recovery password mail has been sent to you
+    2? - Service information
+    20 - Your lvl is increased
+    21 - Entity is deleted
+    22 - Table is deleted
+    3? - Technical errors. Programmers should solve them
+    30 - Table is created succesfully
+    31 - Table already exists
+    32 - Table not found
+    33 - Something goes wrong  - Empty code
+    34 - Authentification failed. Check Primary & Secondary keys
+    35 - Send mail error
+*********************************************/
 
 namespace Gladiator.Controllers
 {
@@ -14,15 +46,20 @@ namespace Gladiator.Controllers
     {
         [Route("api/fight")]
         [HttpGet]
-        public HttpResponseMessage Fight([FromUri]double a, [FromUri]double b, [FromUri]double c, [FromUri]int d)
+        public HttpResponseMessage Fight([FromUri]string login, [FromUri]double a, [FromUri]double b, [FromUri]double c, [FromUri]int d)
         {
             Gladiator enemy = new Gladiator(d);
             Gladiator player = new Gladiator(a, b, c);
             bool result;
-            string resultmsg = "Empty";
+            string resultmsg = "33";
             result = player.battle(enemy);
+            azureTable user = new azureTable();
+
             if (result)
+            {
                 resultmsg = "01" + player.GetLog();// victory
+                user.UpdateLvl(login);
+            }
             else
                 resultmsg = "00" + player.GetLog();// defeat
             string xml = string.Format("{0}", resultmsg);
@@ -35,16 +72,9 @@ namespace Gladiator.Controllers
         [HttpGet]
         public HttpResponseMessage Login([FromUri]string login, [FromUri]string password)
         {
-            string resultmsg = "Empty";
-            //TODO: Connecto DB and complete login check
-            if ((login=="admin@admin.com")&&(password=="123"))
-            {
-                resultmsg = "01";
-            }
-            else
-            {
-                resultmsg = "00";
-            }
+            string resultmsg = "33";
+            azureTable user = new azureTable();
+            resultmsg = user.AuthenticateUser(login, password);
             HttpResponseMessage response = Request.CreateResponse();
             response.Content = new StringContent(resultmsg, System.Text.Encoding.UTF8, "text/plain");
             return response;
@@ -54,15 +84,14 @@ namespace Gladiator.Controllers
         [HttpGet]
         public HttpResponseMessage Recallpsw([FromUri]string login)
         {
-            string resultmsg = "04";
+            string resultmsg = "33";
             //TODO: Connecto DB and complete password recall prcedure
             // Проверить наличие такого логина
-
             // Выслать мейл
-
             // Записать в базу новый пароль
-
             // Выслать ответ в приложение
+            azureTable user = new azureTable();
+            resultmsg = user.RecallPassword(login);
             HttpResponseMessage response = Request.CreateResponse();
             response.Content = new StringContent(resultmsg, System.Text.Encoding.UTF8, "text/plain");
             return response;
@@ -72,15 +101,14 @@ namespace Gladiator.Controllers
         [HttpGet]
         public HttpResponseMessage Signup([FromUri]string login, [FromUri]string password)
         {
-            string resultmsg = "04";
+            string resultmsg = "33";
             //TODO: Connecto DB and complete sign up procedure
             // Проверить наличие такого логина
-
             // Выслать мейл
-
             // Записать в базу новый пароль
-
             // Выслать ответ в приложение
+            azureTable user = new azureTable();
+            resultmsg = user.InsertEntity(login, password);
             HttpResponseMessage response = Request.CreateResponse();
             response.Content = new StringContent(resultmsg, System.Text.Encoding.UTF8, "text/plain");
             return response;
@@ -341,7 +369,606 @@ namespace Gladiator.Controllers
         {
             return log;
         }
+    }
+
+    public class UserEntity : TableEntity
+    {
+        public UserEntity(string login, string domain)
+        {
+            this.PartitionKey = login;
+            this.RowKey = domain;
+        }
+
+        public UserEntity() { }
+
+        public string password { get; set; }
+
+        public int lvl { get; set; }
+    }
+
+    public class azureTable
+    {
+        private string tableName;
+        private string login;
+        private string domain;
+        private string password;
+        private int lvl;
+
+        public azureTable()
+        {
+            tableName = "users";
+        }
+
+        public string CreateTable(string name)
+        {
+            string result = "33";
+            try
+            {
+                tableName = name;
+                // Retrieve the storage account from the connection string
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                    ConfigurationManager.AppSettings["StorageConnectionString"]);
+
+                // Create the table client.
+                CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+
+                // Create the table if it doesn't exist.
+                CloudTable table = tableClient.GetTableReference(tableName);
+                if (table.Exists())
+                {
+                    result = "31";
+                    return result;
+                }
+                table.CreateIfNotExists();
+                result = "30";
+            }
+            catch
+            {
+                result = "34";
+            }
+            return result;
+        }
+
+        public string InsertEntity(string email, string psw)
+        {
+            string result = "33";
+            try
+            {
+                password = psw;
+                string[] tmp = email.Split('@');
+                login = tmp[0];
+                domain = tmp[1];
+                // Retrieve the storage account from the connection string
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                ConfigurationManager.AppSettings["StorageConnectionString"]);
+
+                // Create the table client.
+                CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+
+                // Create the CloudTable object that represents the "people" table.
+                CloudTable table = tableClient.GetTableReference(tableName);
+                if (!table.Exists())
+                {
+                    result = "32";
+                    return result;
+                }
+
+                // Create a new customer entity.
+                UserEntity customer = new UserEntity(login, domain);
+                customer.password = psw;
+                customer.lvl = 0;
+
+                // Create the TableOperation object that inserts the customer entity.
+                TableOperation insertOperation = TableOperation.Insert(customer);
+                result = this.RetrieveEntity(email);
+                if (result.Equals("14"))
+                {
+                    try
+                    {
+                        // Execute the insert operation.
+                        table.Execute(insertOperation);
+                        string subject = "GladiatorAPP - Registration";
+                        string body = string.Format("Hello! You've signed up for GladiatorApp.\n--\nBest regards,\nGladiatorApp support");
+                        result = string.Format("{0}", SendMail(email, subject, body));
+                        result = "10";
+                    }
+                    catch
+                    {
+                        result = "11";
+                        //result = "34";
+                    }
+                }
+                else
+                {
+                    if (result.StartsWith("CODR"))
+                    {
+                        result = "11";
+                    }
+                }
+            }
+            catch
+            {
+                result = "34";
+            }
+            return result;
+        }
+
+        public string RetrieveEntity(string email)
+        {
+            string result = "33";
+            try
+            {
+                string[] tmp = email.Split('@');
+                login = tmp[0];
+                domain = tmp[1];
+                // Retrieve the storage account from the connection string.
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                    ConfigurationManager.AppSettings["StorageConnectionString"]);
+
+                // Create the table client.
+                CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+
+                // Create the CloudTable object that represents the "people" table.
+                CloudTable table = tableClient.GetTableReference(tableName);
+                if (!table.Exists())
+                {
+                    result = "32";
+                    return result;
+                }
+
+                // Create the table query.
+                TableQuery<UserEntity> rangeQuery = new TableQuery<UserEntity>().Where(
+                    TableQuery.CombineFilters(
+                        TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, login),
+                        TableOperators.And,
+                        TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.Equal, domain)));
+
+                int i = 0;
+                result = "";
+
+                // Loop through the results, displaying information about the entity.
+                foreach (UserEntity entity in table.ExecuteQuery(rangeQuery))
+                {
+                    try
+                    {
+                        // Console.WriteLine("{0}@{1}\t{2}\t{3}\n", entity.PartitionKey, entity.RowKey,
+                        //entity.password, entity.lvl);
+                        result = string.Format("CODR{0}@{1}\t{2}\t{3}\n", entity.PartitionKey, entity.RowKey,
+                            entity.password, entity.lvl);
+                        i++;
+                    }
+                    catch
+                    {
+                        result = "32";
+                        //Console.WriteLine("Table not found.");
+                    }
+                }
+                if (i == 0)
+                {
+                    result = "14";
+                }
+            }
+            catch
+            {
+                result = "34";
+                //Console.WriteLine("Authentification failed.");
+            }
+            return result;
+        }
+
+        public string AuthenticateUser(string email, string psw)
+        {
+            string result = "33";
+            try
+            {
+                string[] tmp = email.Split('@');
+                login = tmp[0];
+                domain = tmp[1];
+                // Retrieve the storage account from the connection string.
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                    ConfigurationManager.AppSettings["StorageConnectionString"]);
+
+                // Create the table client.
+                CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+
+                // Create the CloudTable object that represents the "people" table.
+                CloudTable table = tableClient.GetTableReference(tableName);
+                if (!table.Exists())
+                {
+                    result = "32";
+                    return result;
+                }
+
+                // Create the table query.
+                TableQuery<UserEntity> rangeQuery = new TableQuery<UserEntity>().Where(
+                    TableQuery.CombineFilters(
+                        TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, login),
+                        TableOperators.And,
+                        TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.Equal, domain)));
 
 
+                int i = 0;
+                // Loop through the results, displaying information about the entity.
+                foreach (UserEntity entity in table.ExecuteQuery(rangeQuery))
+                {
+                    try
+                    {
+                        if (entity.password == psw)
+                            result = string.Format("12{0}", entity.lvl); // login succesfull
+                        else
+                            result = "15";// login failed
+                        i++;
+                    }
+                    catch
+                    {
+                        result = "32";
+                        //Console.WriteLine("Table not found.");
+                    }
+                }
+                if (i == 0)
+                {
+                    result = "14Login failed. No such entity exists.";
+                }
+
+            }
+            catch
+            {
+                result = "34";
+                //Console.WriteLine("Authentification failed.");
+            }
+            return result;
+        }
+
+        public string RecallPassword(string email) 
+        {
+            string result = "33";
+            try
+            {
+                string[] tmp = email.Split('@');
+                login = tmp[0];
+                domain = tmp[1];
+                // Retrieve the storage account from the connection string.
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                 ConfigurationManager.AppSettings["StorageConnectionString"]);
+
+                // Create the table client.
+                CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+
+                // Create the CloudTable that represents the "people" table.
+                CloudTable table = tableClient.GetTableReference(tableName);
+                if (!table.Exists())
+                {
+                    result = "32";
+                    return result;
+                }
+
+                // Define the query, and select only the Email property.
+                TableQuery<DynamicTableEntity> projectionQuery = new TableQuery<DynamicTableEntity>().Select(
+                new string[] { "password" }).Where(
+                    TableQuery.CombineFilters(
+                        TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, login),
+                        TableOperators.And,
+                        TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.Equal, domain)));
+
+                // Define an entity resolver to work with the entity after retrieval.
+                EntityResolver<string> resolver = (pk, rk, ts, props, etag) => props.ContainsKey("password") ? props["password"].StringValue : null;
+
+                int i = 0;
+                foreach (string projectedPassword in table.ExecuteQuery(projectionQuery, resolver, null, null))
+                {
+                    try
+                    {
+                        string subject = "GladiatorAPP - Password recovery";
+                        string body = string.Format("Hello! Your password has been recalled. Your password is {0}\n--\nBest regards,\nGladiatorApp support", projectedPassword);
+                        result = string.Format("{0}", SendMail(email, subject, body)); // Change when snedmail works well
+                        //Console.WriteLine(projectedPassword);
+                        i++;
+                    }
+                    catch
+                    {
+                        result = "32";
+                        //Console.WriteLine("Table not found.");
+                    }
+                }
+                if (i == 0)
+                    result = "14";
+
+            }
+            catch
+            {
+                result = "34";
+                //Console.WriteLine("Authentification failed.");
+            }
+
+
+            return result;
+        }
+
+        public string UpdateLvl(string email)
+        {
+            string result = "33";
+            try
+            {
+                string[] tmp = email.Split('@');
+                login = tmp[0];
+                domain = tmp[1];
+                // Retrieve the storage account from the connection string.
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                    ConfigurationManager.AppSettings["StorageConnectionString"]);
+
+                // Create the table client.
+                CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+
+                // Create the CloudTable object that represents the "people" table.
+                CloudTable table = tableClient.GetTableReference(tableName);
+                if (!table.Exists())
+                {
+                    result = "32";
+                    return result;
+                }
+
+                // Create a retrieve operation that takes a customer entity.
+                TableOperation retrieveOperation = TableOperation.Retrieve<UserEntity>(login, domain);
+
+                // Execute the operation.
+                TableResult retrievedResult = table.Execute(retrieveOperation);
+
+                // Assign the result to a UserEntity object.
+                UserEntity updateEntity = (UserEntity)retrievedResult.Result;
+
+                if (updateEntity != null)
+                {
+                    // Change the phone number.
+                    updateEntity.lvl++;
+
+                    // Create the InsertOrReplace TableOperation.
+                    TableOperation updateOperation = TableOperation.Replace(updateEntity);
+
+                    // Execute the operation.
+                    table.Execute(updateOperation);
+
+                    //Console.WriteLine("Entity updated.");
+                    result = "CODELevel updated.";
+                }
+                else
+                    result = "14";
+                //Console.WriteLine("14");
+            }
+            catch
+            {
+                result = "34";
+                //Console.WriteLine("34");
+            }
+            return result;
+        }
+
+        public string UpdatePsw(string email, string psw)
+        {
+            string result = "33";
+            try
+            {
+                string[] tmp = email.Split('@');
+                login = tmp[0];
+                domain = tmp[1];
+                // Retrieve the storage account from the connection string.
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                    ConfigurationManager.AppSettings["StorageConnectionString"]);
+
+                // Create the table client.
+                CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+
+                // Create the CloudTable object that represents the "people" table.
+                CloudTable table = tableClient.GetTableReference(tableName);
+                if (!table.Exists())
+                {
+                    result = "32";
+                    return result;
+                }
+
+                // Create a retrieve operation that takes a customer entity.
+                TableOperation retrieveOperation = TableOperation.Retrieve<UserEntity>(login, domain);
+
+                // Execute the operation.
+                TableResult retrievedResult = table.Execute(retrieveOperation);
+
+                // Assign the result to a UserEntity object.
+                UserEntity updateEntity = (UserEntity)retrievedResult.Result;
+
+                if (updateEntity != null)
+                {
+                    // Change the phone number.
+                    updateEntity.password = psw;
+
+                    // Create the InsertOrReplace TableOperation.
+                    TableOperation updateOperation = TableOperation.Replace(updateEntity);
+
+                    // Execute the operation.
+                    table.Execute(updateOperation);
+
+                    //Console.WriteLine("Entity updated.");
+                    result = "13";
+                }
+                else
+                    result = "14";
+                //Console.WriteLine("14");
+            }
+            catch
+            {
+                result = "34";
+                //Console.WriteLine("34");
+            }
+            return result;
+        }
+
+        public string DeleteUser(string email)
+        {
+            string result = "33";
+            try
+            {
+                string[] tmp = email.Split('@');
+                login = tmp[0];
+                domain = tmp[1];
+                // Retrieve the storage account from the connection string.
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                    ConfigurationManager.AppSettings["StorageConnectionString"]);
+
+                // Create the table client.
+                CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+
+                // Create the CloudTable that represents the "people" table.
+                CloudTable table = tableClient.GetTableReference(tableName);
+                if (!table.Exists())
+                {
+                    result = "32";
+                    return result;
+                }
+
+                // Create a retrieve operation that expects a customer entity.
+                TableOperation retrieveOperation = TableOperation.Retrieve<UserEntity>(login, domain);
+
+                // Execute the operation.
+                TableResult retrievedResult = table.Execute(retrieveOperation);
+
+                // Assign the result to a UserEntity.
+                UserEntity deleteEntity = (UserEntity)retrievedResult.Result;
+
+                // Create the Delete TableOperation.
+                if (deleteEntity != null)
+                {
+                    TableOperation deleteOperation = TableOperation.Delete(deleteEntity);
+
+                    // Execute the operation.
+                    table.Execute(deleteOperation);
+
+                    result = "21";
+                    //Console.WriteLine("Entity deleted.");
+                }
+
+                else
+                    result = "14";
+                //Console.WriteLine("Could not retrieve the entity.");
+            }
+            catch
+            {
+                result = "34";
+                //Console.WriteLine("Authentification failed.");
+            }
+            return result;
+        }
+
+        public string DeleteTable(string name)
+        {
+            string result = "33";
+            try
+            {
+                // Retrieve the storage account from the connection string.
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                    ConfigurationManager.AppSettings["StorageConnectionString"]);
+
+                // Create the table client.
+                CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+
+                // Create the CloudTable that represents the "people" table.
+                CloudTable table = tableClient.GetTableReference(name);
+                if (!table.Exists())
+                {
+                    result = "32";
+                    return result;
+                }
+
+                // Delete the table it if exists.
+                table.DeleteIfExists();
+                result = "22";
+                //Console.WriteLine("Table deleted.");
+            }
+            catch
+            {
+                result = "34";
+                //Console.WriteLine("Authentification failed.");
+            }
+            return result;
+        }
+
+        public string RetrieveAllEntities()
+        {
+            string result = "33";
+            try
+            {
+                // Retrieve the storage account from the connection string.
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                    ConfigurationManager.AppSettings["StorageConnectionString"]);
+
+                // Create the table client.
+                CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+
+                // Create the CloudTable object that represents the "people" table.
+                CloudTable table = tableClient.GetTableReference(tableName);
+                if (!table.Exists())
+                {
+                    result = "32";
+                    return result;
+                }
+
+                // Create the table query.
+                TableQuery<UserEntity> rangeQuery = new TableQuery<UserEntity>();
+
+                int i = 0;
+                result = "CODR";
+
+                // Loop through the results, displaying information about the entity.
+                foreach (UserEntity entity in table.ExecuteQuery(rangeQuery))
+                {
+                    try
+                    {
+                        // Console.WriteLine("{0}@{1}\t{2}\t{3}\n", entity.PartitionKey, entity.RowKey,
+                        //entity.password, entity.lvl);
+                        result = string.Format("{0}{1}@{2}\t{3}\t{4}\n", result, entity.PartitionKey, entity.RowKey,
+                            entity.password, entity.lvl);
+                        i++;
+                    }
+                    catch
+                    {
+                        result = "32";
+                        //Console.WriteLine("Table not found.");
+                    }
+                }
+                if (i == 0)
+                {
+                    result = "14";
+                }
+            }
+            catch
+            {
+                result = "34";
+                //Console.WriteLine("Authentification failed.");
+            }
+            return result;
+        }
+
+        public string SendMail(string login, string subject, string body)
+        {
+            string result = "33";
+            SmtpClient client = new SmtpClient();
+            client.Port = 587;
+            client.Host = "smtp.rambler.ru";
+            client.EnableSsl = true;
+            client.Timeout = 10000;
+            client.DeliveryMethod = SmtpDeliveryMethod.Network;
+            client.UseDefaultCredentials = false;
+            client.Credentials = new System.Net.NetworkCredential("support.sendmail@rambler.ru", "password");
+            MailMessage mm = new MailMessage("support.sendmail@rambler.ru", login, subject, body);
+            mm.DeliveryNotificationOptions = DeliveryNotificationOptions.OnFailure;
+            try
+            {
+                client.Send(mm);
+                result = "16";
+            }
+            catch
+            {
+                result = "35";
+            }
+
+            return result;
+        }
     }
 }
