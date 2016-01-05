@@ -7,6 +7,7 @@ using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Table;
 using System.Configuration;
+using System.Net.Mail;
 
 /*********************************************
     Error codes:
@@ -32,6 +33,7 @@ using System.Configuration;
     32 - Table not found
     33 - Something goes wrong  - Empty code
     34 - Authentification failed. Check Primary & Secondary keys
+    35 - Send mail error
 *********************************************/
 
 namespace StorageAccountTableTest
@@ -47,7 +49,7 @@ namespace StorageAccountTableTest
             for (int i = 0; i < 200; i++)
             {
                 if (op == 0) break;
-                Console.WriteLine("Choose the option:\n1.Create table users\n2. Insert user\n3. Sign in procedure\n4. Password recall\n5. Update password\n6. Updatelvl +1\n7. RetrieveEntity\n8. Delete user\n9. Delete table\n10. Retrieve all entities");
+                Console.WriteLine("Choose the option:\n1.Create table users\n2. Insert user\n3. Sign in procedure\n4. Password recall\n5. Update password\n6. Updatelvl +1\n7. RetrieveEntity\n8. Delete user\n9. Delete table\n10. Retrieve all entities\n11. Send mail");
                 op = Convert.ToInt32(Console.ReadLine());
                 //Console.WriteLine("op = {0}", op);
                 switch (op)
@@ -112,6 +114,12 @@ namespace StorageAccountTableTest
                     case 10:
                         {
                             Console.WriteLine("Table1.RetrieveAllEntities=\n{0}", Table1.RetrieveAllEntities());
+                            break;
+                        }
+                    case 11:
+                        {
+                            email = "vereszp@gmail.com";
+                            Console.WriteLine("Table1.SendMail(email)={0}\n", Table1.SendMail(email));
                             break;
                         }
                     default:
@@ -988,6 +996,35 @@ namespace StorageAccountTableTest
                 result = "CODEAuthentification failed.";
                 Console.WriteLine("Authentification failed.");
             }
+            return result;
+        }
+
+        public string SendMail(string login)
+        {
+            string result = "CODEEmpty";
+            SmtpClient client = new SmtpClient();
+            //client.Port = 25;
+            client.Port = 587;
+            client.Host = "smtp.rambler.ru";
+            //client.Host = "smtp.google.com";
+            client.EnableSsl = true;
+            client.Timeout = 10000;
+            client.DeliveryMethod = SmtpDeliveryMethod.Network;
+            client.UseDefaultCredentials = false;
+            client.Credentials = new System.Net.NetworkCredential("support.sendmail@rambler.ru", "password");
+            MailMessage mm = new MailMessage("support.sendmail@rambler.ru", "vereszp@gmail.com", "test subject", "test body 3");
+            mm.BodyEncoding = UTF8Encoding.UTF8;
+            mm.DeliveryNotificationOptions = DeliveryNotificationOptions.OnFailure;
+            Console.WriteLine("Sending mail...\n");
+            try
+            {
+                client.Send(mm);
+                result = "16Mail has been sent.";
+            } catch
+            {
+                result = "35Mail hasnt been sent.";
+            }
+
             return result;
         }
 
