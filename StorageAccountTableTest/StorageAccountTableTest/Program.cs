@@ -92,12 +92,16 @@ namespace StorageAccountTableTest
                         }
                     case 7:
                         {
-                            Console.WriteLine("Table1.RetrieveEntity={0}", Table1.RetrieveEntity(mail));
+                            Console.WriteLine("Write down Email: ");
+                            email = Console.ReadLine();
+                            Console.WriteLine("Table1.RetrieveEntity={0}", Table1.RetrieveEntity(email));
                             break;
                         }
                     case 8:
                         {
-                            Console.WriteLine("Table1.DeleteUser={0}", Table1.DeleteUser(mail));
+                            Console.WriteLine("Write down Email: ");
+                            email = Console.ReadLine();
+                            Console.WriteLine("Table1.DeleteUser={0}", Table1.DeleteUser(email));
                             break;
                         }
                     case 9:
@@ -585,7 +589,7 @@ namespace StorageAccountTableTest
                     catch
                     {
                         result = "CODETable not found.";
-                        Console.WriteLine("Table not found.");
+                        //Console.WriteLine("Table not found.");
                     }
                 }
                 if (i==0)
@@ -596,7 +600,7 @@ namespace StorageAccountTableTest
             catch
             {
                 result = "CODEAuthentification failed.";
-                Console.WriteLine("Authentification failed.");
+                //Console.WriteLine("Authentification failed.");
             }
             return result;
         }
