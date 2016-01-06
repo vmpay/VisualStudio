@@ -446,6 +446,12 @@ namespace StorageAccountTableTest
         public string password { get; set; }
 
         public int lvl { get; set; }
+
+        public int played { get; set; }
+
+        public DateTime regdate { get; set; }
+
+        public DateTime lastdate { get; set; }
     }
 
     public class azureTable
@@ -455,6 +461,9 @@ namespace StorageAccountTableTest
         private string domain;
         private string password;
         private int lvl;
+        private int played;
+        private DateTime regdate;
+        private DateTime lastdate;
 
         public azureTable()
         {
@@ -518,6 +527,10 @@ namespace StorageAccountTableTest
                 CustomerEntity customer = new CustomerEntity(login, domain);
                 customer.password = psw;
                 customer.lvl = 0;
+                customer.regdate = DateTime.Now;
+                customer.lastdate = DateTime.Now;
+                customer.played = 0;
+                //Console.WriteLine(customer.regdate);
 
                 // Create the TableOperation object that inserts the customer entity.
                 TableOperation insertOperation = TableOperation.Insert(customer);
@@ -532,7 +545,7 @@ namespace StorageAccountTableTest
                 }
                 catch
                 {
-                    result = "CODECreating failed. Entity already exists.";
+                    result = "CODECreating failed. Entity already exists. Try-Catch";
                     //result = "CODEAuthentification failed.";
                 }
             }
@@ -540,7 +553,7 @@ namespace StorageAccountTableTest
             {
                 if (result.StartsWith("CODR"))
                 {
-                    result = "CODECreating failed. Entity already exists";
+                    result = "CODECreating failed. Entity already exists. If-else";
                 }
             }
             } catch
@@ -590,8 +603,8 @@ namespace StorageAccountTableTest
                     {
                         // Console.WriteLine("{0}@{1}\t{2}\t{3}\n", entity.PartitionKey, entity.RowKey,
                         //entity.password, entity.lvl);
-                        result = string.Format("CODR{0}@{1}\t{2}\t{3}\n", entity.PartitionKey, entity.RowKey,                        
-                            entity.password, entity.lvl);
+                        result = string.Format("CODR{0}@{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n", entity.PartitionKey, entity.RowKey,                        
+                            entity.password, entity.lvl, entity.played, entity.regdate, entity.lastdate);
                         i++;
                     }
                     catch
@@ -650,10 +663,17 @@ namespace StorageAccountTableTest
                     {
                         try
                         {
-                            if (entity.password == psw)
-                                result = string.Format("CODE{0}", entity.lvl); // login succesfull
-                            else
-                                result = "CODELogin failed. Wrong password.";// login failed
+                        if (entity.password == psw)
+                        {
+                            result = string.Format("CODE{0}", entity.lvl); // login succesfull
+                            entity.lastdate = DateTime.Now;
+                            // Create the InsertOrReplace TableOperation.
+                            TableOperation updateOperation = TableOperation.Replace(entity);
+                            // Execute the operation.
+                            table.Execute(updateOperation);
+                        }
+                        else
+                            result = "CODELogin failed. Wrong password.";// login failed
                             i++;
                         }
                         catch
@@ -976,8 +996,8 @@ namespace StorageAccountTableTest
                     {
                         // Console.WriteLine("{0}@{1}\t{2}\t{3}\n", entity.PartitionKey, entity.RowKey,
                         //entity.password, entity.lvl);
-                        result = string.Format("{0}{1}@{2}\t{3}\t{4}\n", result, entity.PartitionKey, entity.RowKey,
-                            entity.password, entity.lvl);
+                        result = string.Format("{0}{1}@{2}\t{3}\t{4}\t{5}\t{6}\t{7}\n", result, entity.PartitionKey, entity.RowKey,
+                            entity.password, entity.lvl, entity.played, entity.regdate, entity.lastdate);
                         i++;
                     }
                     catch

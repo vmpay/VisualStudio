@@ -58,10 +58,10 @@ namespace Gladiator.Controllers
             if (result)
             {
                 resultmsg = "01" + player.GetLog();// victory
-                user.UpdateLvl(login);
             }
             else
                 resultmsg = "00" + player.GetLog();// defeat
+            user.UpdateLvl(login, result);
             string xml = string.Format("{0}", resultmsg);
             HttpResponseMessage response = Request.CreateResponse();
             response.Content = new StringContent(xml, System.Text.Encoding.UTF8, "text/plain");
@@ -384,6 +384,12 @@ namespace Gladiator.Controllers
         public string password { get; set; }
 
         public int lvl { get; set; }
+
+        public int played { get; set; }
+
+        public DateTime regdate { get; set; }
+
+        public DateTime lastdate { get; set; }
     }
 
     public class azureTable
@@ -457,6 +463,9 @@ namespace Gladiator.Controllers
                 UserEntity customer = new UserEntity(login, domain);
                 customer.password = psw;
                 customer.lvl = 0;
+                customer.regdate = DateTime.Now;
+                customer.lastdate = DateTime.Now;
+                customer.played = 0;
 
                 // Create the TableOperation object that inserts the customer entity.
                 TableOperation insertOperation = TableOperation.Insert(customer);
@@ -533,8 +542,8 @@ namespace Gladiator.Controllers
                     {
                         // Console.WriteLine("{0}@{1}\t{2}\t{3}\n", entity.PartitionKey, entity.RowKey,
                         //entity.password, entity.lvl);
-                        result = string.Format("CODR{0}@{1}\t{2}\t{3}\n", entity.PartitionKey, entity.RowKey,
-                            entity.password, entity.lvl);
+                        result = string.Format("CODR{0}@{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n", entity.PartitionKey, entity.RowKey,
+                            entity.password, entity.lvl, entity.played, entity.regdate, entity.lastdate);
                         i++;
                     }
                     catch
@@ -594,7 +603,14 @@ namespace Gladiator.Controllers
                     try
                     {
                         if (entity.password == psw)
+                        {
                             result = string.Format("12{0}", entity.lvl); // login succesfull
+                            entity.lastdate = DateTime.Now;
+                            // Create the InsertOrReplace TableOperation.
+                            TableOperation updateOperation = TableOperation.Replace(entity);
+                            // Execute the operation.
+                            table.Execute(updateOperation);
+                        }
                         else
                             result = "15";// login failed
                         i++;
@@ -684,7 +700,7 @@ namespace Gladiator.Controllers
             return result;
         }
 
-        public string UpdateLvl(string email)
+        public string UpdateLvl(string email, bool fightresult)
         {
             string result = "33";
             try
@@ -719,7 +735,9 @@ namespace Gladiator.Controllers
                 if (updateEntity != null)
                 {
                     // Change the phone number.
-                    updateEntity.lvl++;
+                    updateEntity.played++;
+                    if (fightresult)
+                        updateEntity.lvl++;
 
                     // Create the InsertOrReplace TableOperation.
                     TableOperation updateOperation = TableOperation.Replace(updateEntity);
@@ -922,8 +940,8 @@ namespace Gladiator.Controllers
                     {
                         // Console.WriteLine("{0}@{1}\t{2}\t{3}\n", entity.PartitionKey, entity.RowKey,
                         //entity.password, entity.lvl);
-                        result = string.Format("{0}{1}@{2}\t{3}\t{4}\n", result, entity.PartitionKey, entity.RowKey,
-                            entity.password, entity.lvl);
+                        result = string.Format("{0}{1}@{2}\t{3}\t{4}\t{5}\t{6}\t{7}\n", result, entity.PartitionKey, entity.RowKey,
+                            entity.password, entity.lvl, entity.played, entity.regdate, entity.lastdate);
                         i++;
                     }
                     catch
