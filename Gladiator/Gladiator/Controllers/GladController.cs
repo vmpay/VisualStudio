@@ -132,12 +132,14 @@ namespace Gladiator.Controllers
         private double basehp = 20;// Base hit points
         private double baseap = 5;// Base attack points
         private string log = "Empty";// Fight log
+
         public Gladiator()
         {
             hp = basehp;
             ap = baseap;
             crit = basecrit;
         }
+
         public Gladiator(int lvl)
         {
             switch (lvl)
@@ -169,6 +171,7 @@ namespace Gladiator.Controllers
                     break;
             }
         }
+
         public Gladiator(double a, double b, double c)
         {
             double critbonus = 0;
@@ -182,6 +185,7 @@ namespace Gladiator.Controllers
             crit = basecrit + critbonus;
            // Console.WriteLine("My crit chance={0}", crit);
         }
+
         public bool battle(Gladiator enemy)
         {
             Random rnd = new Random();
