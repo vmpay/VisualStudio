@@ -20,6 +20,7 @@ using Microsoft.WindowsAzure.Storage.Queue;
     00 - Defeat
     01 - Victory
     02 - Cannot connect to the server
+    03 - Looking for opponents
     1? - User level message
     10 - Entity is added
     11 - Entity already exists
@@ -94,18 +95,18 @@ namespace Gladiator.Controllers
                 azureTable user = new azureTable();
                 if (result)
                 {
-                    resultmsg = "01" + player.GetLog(true);// victory
+                    resultmsg = "01" + login + " vs " + words[0] + "NL" + player.GetLog(true);// victory
                     resultopmsg = "00" + player.GetLog(false);
                 }
                 else
                 {
-                    resultmsg = "00" + player.GetLog(true);// defeat
+                    resultmsg = "00" + login + " vs " + words[0] + "NL" + player.GetLog(true);// defeat
                     resultopmsg = "01" + player.GetLog(false);
                 }
                 user.UpdateLvl(login, result);
                 user.UpdateLvl(words[0], !result);
-                queue.AddMsgQ(String.Format("{0} vs {1}NL{2}", words[0], login, resultopmsg), false);
-                string xml = string.Format("{0}NL{1}", words[0], resultmsg);
+                queue.AddMsgQ(String.Format("{0}&{1}&{2}", words[0], login, resultopmsg), false);
+                string xml = string.Format("{0}", resultmsg);
                 HttpResponseMessage response = Request.CreateResponse();
                 response.Content = new StringContent(xml, System.Text.Encoding.UTF8, "text/plain");
                 return response;
@@ -113,11 +114,31 @@ namespace Gladiator.Controllers
             else
             {
                 queue.AddMsgQ(String.Format("{0} {1} {2} {3}", login, a, b, c), true);
-                string xml = string.Format("LFO");
+                string xml = string.Format("03");//Looking for opponents
                 HttpResponseMessage response = Request.CreateResponse();
                 response.Content = new StringContent(xml, System.Text.Encoding.UTF8, "text/plain");
                 return response;
             }
+        }
+
+        [Route("api/fightpvp")]
+        [HttpGet]
+        public HttpResponseMessage FightPVP([FromUri]string login)
+        {
+            AzureQueue queue = new AzureQueue();
+            string resultmsg = "33";
+            resultmsg = queue.ViewMsg(login, false);
+            if (resultmsg.Substring(0, 3) == "173" || resultmsg.Substring(0, 3) == "172" || resultmsg.Substring(0, 2) == "34")
+                resultmsg = "03";
+            else
+            {
+                string[] words = resultmsg.Split(new Char[] { '&' });
+                resultmsg = String.Format("{0}{1} vs {2}NL{3}", words[2].Substring(0, 2), words[0], words[1], words[2].Substring(2));
+            }
+            string xml = string.Format("{0}", resultmsg);
+            HttpResponseMessage response = Request.CreateResponse();
+            response.Content = new StringContent(xml, System.Text.Encoding.UTF8, "text/plain");
+            return response;
         }
 
         [Route("api/login")]
@@ -1179,7 +1200,7 @@ namespace Gladiator.Controllers
                     queue = queuei;
                 else
                     queue = queueo;
-                queue.AddMessage(message, TimeSpan.FromSeconds(60));
+                queue.AddMessage(message, TimeSpan.FromSeconds(30));
                 //Console.WriteLine("Message has been added to {0}.", io);
                 return "171";
             }
@@ -1204,6 +1225,8 @@ namespace Gladiator.Controllers
                     peekedMessage = queuei.PeekMessage();
                 else
                     peekedMessage = queueo.PeekMessage();
+                if (peekedMessage.AsString == null)
+                    return false;
                 // Display message.
                 //Console.WriteLine(peekedMessage.AsString);
                 return true;
@@ -1303,7 +1326,7 @@ namespace Gladiator.Controllers
             }
         }
 
-        public string ViewMsg(int count, bool io)
+        public string ViewMsg(string login, bool io)
         {
             if (!VerifyConfiguration())
             {
@@ -1317,14 +1340,21 @@ namespace Gladiator.Controllers
                 else
                     queue = queueo;
                 int i = 1;
-                foreach (CloudQueueMessage message in queue.GetMessages(count, TimeSpan.FromSeconds(5)))
+                foreach (CloudQueueMessage message in queue.GetMessages(32, TimeSpan.FromSeconds(5)))
                 {
                     //Console.WriteLine("{0}. {1} - {2}", i, message.AsString, message.ExpirationTime);
                     //TODO: something
+                    string[] words = message.AsString.Split(new Char[] { '&' });
+                    if (words[0] == login)
+                    {
+                        queue.DeleteMessage(message);
+                        return message.AsString;
+                    }
                     i++;
-                    /*queue.DeleteMessage(message);
-                    if (message.AsString != "vip msg")
-                        queue.AddMessage(message, TimeSpan.FromSeconds(30));*/
+                    //queue.DeleteMessage(message);
+                    //if (message.AsString != "vip msg")
+                    queue.DeleteMessage(message);
+                    queue.AddMessage(message, TimeSpan.FromSeconds(30));
                 }
                 if (i == 0)
                 {
