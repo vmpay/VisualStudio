@@ -63,10 +63,10 @@ namespace Gladiator.Controllers
             azureTable user = new azureTable();
             if (result)
             {
-                resultmsg = "01" + player.GetLog();// victory
+                resultmsg = "01" + player.GetLog(true);// victory
             }
             else
-                resultmsg = "00" + player.GetLog();// defeat
+                resultmsg = "00" + player.GetLog(true);// defeat
             user.UpdateLvl(login, result);
             string xml = string.Format("{0}", resultmsg);
             HttpResponseMessage response = Request.CreateResponse();
@@ -78,24 +78,46 @@ namespace Gladiator.Controllers
         [HttpGet]
         public HttpResponseMessage FightPVP([FromUri]string login, [FromUri]double a, [FromUri]double b, [FromUri]double c)
         {
-
-            Gladiator enemy = new Gladiator(d);
-            Gladiator player = new Gladiator(a, b, c);
-            bool result;
-            string resultmsg = "33";
-            result = player.battle(enemy);
-            azureTable user = new azureTable();
-            if (result)
+            AzureQueue queue = new AzureQueue();
+            if (queue.PeekMsg(true))
             {
-                resultmsg = "01" + player.GetLog();// victory
+                bool result;
+                string resultmsg = "33", resultopmsg = "33";
+                CloudQueueMessage opponent = queue.deQueueMsg(true);
+                string[] words = opponent.AsString.Split(new Char[] { ' ' });
+                int enemyA = Int32.Parse(words[1]);
+                int enemyB = Int32.Parse(words[2]);
+                int enemyC = Int32.Parse(words[3]);
+                Gladiator player = new Gladiator(a, b, c);
+                Gladiator enemy = new Gladiator(enemyA, enemyB, enemyC);
+                result = player.battle(enemy);
+                azureTable user = new azureTable();
+                if (result)
+                {
+                    resultmsg = "01" + player.GetLog(true);// victory
+                    resultopmsg = "00" + player.GetLog(false);
+                }
+                else
+                {
+                    resultmsg = "00" + player.GetLog(true);// defeat
+                    resultopmsg = "01" + player.GetLog(false);
+                }
+                user.UpdateLvl(login, result);
+                user.UpdateLvl(words[0], !result);
+                queue.AddMsgQ(String.Format("{0} vs {1}NL{2}", words[0], login, resultopmsg), false);
+                string xml = string.Format("{0}NL{1}", words[0], resultmsg);
+                HttpResponseMessage response = Request.CreateResponse();
+                response.Content = new StringContent(xml, System.Text.Encoding.UTF8, "text/plain");
+                return response;
             }
             else
-                resultmsg = "00" + player.GetLog();// defeat
-            user.UpdateLvl(login, result);
-            string xml = string.Format("{0}", resultmsg);
-            HttpResponseMessage response = Request.CreateResponse();
-            response.Content = new StringContent(xml, System.Text.Encoding.UTF8, "text/plain");
-            return response;
+            {
+                queue.AddMsgQ(String.Format("{0} {1} {2} {3}", login, a, b, c), true);
+                string xml = string.Format("LFO");
+                HttpResponseMessage response = Request.CreateResponse();
+                response.Content = new StringContent(xml, System.Text.Encoding.UTF8, "text/plain");
+                return response;
+            }
         }
 
         [Route("api/login")]
@@ -161,7 +183,7 @@ namespace Gladiator.Controllers
         private double basecrit = 0.1;// Base critical strike chance  (BCSC) + MCSCB = Max allowed critical strike chance
         private double basehp = 20;// Base hit points
         private double baseap = 5;// Base attack points
-        private string log = "Empty";// Fight log
+        private string log = "Empty", log2 = "Empty";// Fight log
 
         public Gladiator()
         {
@@ -222,13 +244,14 @@ namespace Gladiator.Controllers
             double tmpap = ap, tmphp = hp;
             double tmpape = enemy.ap, tmphpe = enemy.hp;
             log = string.Format("1. My hp={0:0.00} enemy hp={1:0.00}", tmphp, tmphpe) + "NL";
+            log2 = string.Format("1. My hp={0:0.00} enemy hp={1:0.00}", tmphpe, tmphp) + "NL";
             //Console.WriteLine("Before the fight: My hp={0:0.00}, enemy hp={1:0.00}", tmphp, tmphpe);
             if ((rnd.Next(0, 100) % 2) == 0)//Player.this strikes first
             {
                 int i = 0;
                 log += "Player strikes first" + "NL";
+                log2 += "Enemy strikes first" + "NL";
                 //Console.WriteLine("Player strikes first");
-                //insert while
                 while ((tmphp > 0) && (tmphpe > 0))
                 {
 
@@ -238,6 +261,7 @@ namespace Gladiator.Controllers
                         {
                             tmpap = tmpap * xcrit;
                             log += "Player critically hits!" + "NL";
+                            log2 += "Enemy critically hits!" + "NL";
                             //Console.WriteLine("Player critically hits!");
                         }
                         if (rnd.Next(0, 100) >= ev * 100)
@@ -246,22 +270,31 @@ namespace Gladiator.Controllers
                             {
                                 tmpap = tmpap * xblock;
                                 log += "Enemy blocks the attack!" + "NL";
+                                log2 += "Player blocks the attack!" + "NL";
                                 //Console.WriteLine("Enemy blocks the attack!");
                             }
                             tmphpe = tmphpe - tmpap;
                             log += string.Format("Player hits for {0:0.00}!", tmpap) + "NL";
+                            log2 += string.Format("Enemy hits for {0:0.00}!", tmpap) + "NL";
                             //Console.WriteLine("Player hits for {0:0.00}!", tmpap);
                         }
                         else
+                        {
                             log += "Enemy evaded the attack!" + "NL";
+                            log2 += "Player evaded the attack!" + "NL";
+                        }
                         //Console.WriteLine("Enemy evaded the attack!");
                     }
                     else
+                    {
                         log += "Player misses the target!" + "NL";
+                        log2 += "Enemy misses the target!" + "NL";
+                    }
                     //Console.WriteLine("Player misses the target!");
                     if (tmphpe <= 0)
                     {
                         log += string.Format("After the fight: My hp={0:0.00} enemy hp={1:0.00}", tmphp, tmphpe) + "NL";
+                        log2 += string.Format("After the fight: My hp={0:0.00} enemy hp={1:0.00}", tmphpe, tmphp) + "NL";
                         //Console.WriteLine("After the fight: My hp={0:0.00}, enemy hp={1:0.00}", tmphp, tmphpe);
                         return true;
                     }
@@ -271,6 +304,7 @@ namespace Gladiator.Controllers
                         {
                             tmpape = tmpape * xcrit;
                             log += "Enemy critically hits!" + "NL";
+                            log2 += "Player critically hits!" + "NL";
                             //Console.WriteLine("Enemy critically hits!");
                         }
                         if (rnd.Next(0, 100) >= ev * 100)
@@ -279,29 +313,39 @@ namespace Gladiator.Controllers
                             {
                                 tmpape = tmpape * xblock;
                                 log += "Player blocks the attack!" + "NL";
+                                log2 += "Enemy blocks the attack!" + "NL";
                                 //Console.WriteLine("Player blocks the attack!");
                             }
                             tmphp = tmphp - tmpape;
                             log += string.Format("Enemy hits for {0:0.00}!", tmpape) + "NL";
+                            log2 += string.Format("Player hits for {0:0.00}!", tmpape) + "NL";
                             //Console.WriteLine("Enemy hits for {0:0.00}!", tmpape);
                         }
                         else
+                        {
                             log += "Player evaded the attack!" + "NL";
+                            log2 += "Enemy evaded the attack!" + "NL";
+                        }
                         //Console.WriteLine("Player evaded the attack!");
                     }
                     else
+                    {
                         log += "Enemy misses the target!" + "NL";
+                        log2 += "Player misses the target!" + "NL";
+                    }
                     //Console.WriteLine("Enemy misses the target!");
                     if (tmphp <= 0)
                     {
                         log += string.Format("After the fight: My hp={0:0.00} enemy hp={1:0.00}", tmphp, tmphpe) + "NL";
+                        log2 += string.Format("After the fight: My hp={0:0.00} enemy hp={1:0.00}", tmphpe, tmphp) + "NL";
                         //Console.WriteLine("After the fight: My hp={0:0.00}, enemy hp={1:0.00}", tmphp, tmphpe);
                         return false;
                     }
                     tmpap = ap;
                     tmpape = enemy.ap;
                     i++;
-                    log += string.Format("{2}. My hp={0:0.00} enemy hp={1:0.00}", tmphp, tmphpe, i+1) + "NL";
+                    log += string.Format("{2}. My hp={0:0.00} enemy hp={1:0.00}", tmphp, tmphpe, i + 1) + "NL";
+                    log2 += string.Format("{2}. My hp={0:0.00} enemy hp={1:0.00}", tmphpe, tmphp, i + 1) + "NL";
                     //Console.WriteLine("My hp={0:0.00}, enemy hp={1:0.00} Skirmish={2}", tmphp, tmphpe, i);
                 }
 
@@ -309,6 +353,7 @@ namespace Gladiator.Controllers
             else//Enemy strikes first
             {
                 log += "Enemy strikes first" + "NL";
+                log2 += "Player strikes first" + "NL";
                 //Console.WriteLine("Enemy strikes first");
                 int i = 0;
                 while ((tmphp > 0) && (tmphpe > 0))
@@ -319,6 +364,7 @@ namespace Gladiator.Controllers
                         {
                             tmpape = tmpape * xcrit;
                             log += "Enemy critically hits!" + "NL";
+                            log2 += "Player critically hits!" + "NL";
                             //Console.WriteLine("Enemy critically hits!");
                         }
                         if (rnd.Next(0, 100) >= ev * 100)
@@ -327,22 +373,31 @@ namespace Gladiator.Controllers
                             {
                                 tmpape = tmpape * xblock;
                                 log += "Player blocks the attack!" + "NL";
+                                log2 += "Enemy blocks the attack!" + "NL";
                                 //Console.WriteLine("Player blocks the attack!");
                             }
                             tmphp = tmphp - tmpape;
                             log += string.Format("Enemy hits for {0:0.00}!", tmpape) + "NL";
+                            log2 += string.Format("Player hits for {0:0.00}!", tmpape) + "NL";
                             //Console.WriteLine("Enemy hits for {0:0.00}!", tmpape);
                         }
                         else
+                        {
                             log += "Player evaded the attack!" + "NL";
+                            log2 += "Enemy evaded the attack!" + "NL";
+                        }
                         //Console.WriteLine("Player evaded the attack!");
                     }
                     else
+                    {
                         log += "Enemy misses the target!" + "NL";
+                        log2 += "Player misses the target!" + "NL";
+                    }
                     //Console.WriteLine("Enemy misses the target!");
                     if (tmphp <= 0)
                     {
                         log += string.Format("After the fight: My hp={0:0.00} enemy hp={1:0.00}", tmphp, tmphpe) + "NL";
+                        log2 += string.Format("After the fight: My hp={0:0.00} enemy hp={1:0.00}", tmphpe, tmphp) + "NL";
                         //Console.WriteLine("After the fight: My hp={0:0.00}, enemy hp={1:0.00}", tmphp, tmphpe);
                         return false;
                     }
@@ -352,6 +407,7 @@ namespace Gladiator.Controllers
                         {
                             tmpap = tmpap * xcrit;
                             log += "Player critically hits!" + "NL";
+                            log2 += "Enemy critically hits!" + "NL";
                             //Console.WriteLine("Player critically hits!");
                         }
                         if (rnd.Next(0, 100) >= ev * 100)
@@ -360,22 +416,31 @@ namespace Gladiator.Controllers
                             {
                                 tmpap = tmpap * xblock;
                                 log += "Enemy blocks the attack!" + "NL";
+                                log2 += "Player blocks the attack!" + "NL";
                                 //Console.WriteLine("Enemy blocks the attack!");
                             }
                             tmphpe = tmphpe - tmpap;
                             log += string.Format("Player hits for {0:0.00}!", tmpap) + "NL";
+                            log2 += string.Format("Enemy hits for {0:0.00}!", tmpap) + "NL";
                             //Console.WriteLine("Player hits for {0:0.00}!", tmpap);
                         }
                         else
+                        {
                             log += "Enemy evaded the attack!" + "NL";
+                            log2 += "Player evaded the attack!" + "NL";
+                        }
                         //Console.WriteLine("Enemy evaded the attack!");
                     }
                     else
+                    {
                         log += "Player misses the target!" + "NL";
+                        log2 += "Enemy misses the target!" + "NL";
+                    }
                     //Console.WriteLine("Player misses the target!");
                     if (tmphpe <= 0)
                     {
                         log += string.Format("After the fight: My hp={0:0.00} enemy hp={1:0.00}", tmphp, tmphpe) + "NL";
+                        log2 += string.Format("After the fight: My hp={0:0.00} enemy hp={1:0.00}", tmphpe, tmphp) + "NL";
                         //Console.WriteLine("After the fight: My hp={0:0.00}, enemy hp={1:0.00}", tmphp, tmphpe);
                         return true;
                     }
@@ -383,6 +448,7 @@ namespace Gladiator.Controllers
                     tmpape = enemy.ap;
                     i++;
                     log += string.Format("{2}. My hp={0:0.00} enemy hp={1:0.00}", tmphp, tmphpe, i+1) + "NL";
+                    log2 += string.Format("{2}. My hp={0:0.00} enemy hp={1:0.00}", tmphpe, tmphp, i + 1) + "NL";
                     //Console.WriteLine("My hp={0:0.00}, enemy hp={1:0.00} Skirmish={2}", tmphp, tmphpe, i);
                 }
             }
@@ -399,9 +465,12 @@ namespace Gladiator.Controllers
 
         }
 
-        public string GetLog()
+        public string GetLog(bool player)
         {
-            return log;
+            if (player)
+                return log;
+            else
+                return log2;
         }
     }
 
@@ -1110,7 +1179,7 @@ namespace Gladiator.Controllers
                     queue = queuei;
                 else
                     queue = queueo;
-                queue.AddMessage(message, TimeSpan.FromSeconds(30));
+                queue.AddMessage(message, TimeSpan.FromSeconds(60));
                 //Console.WriteLine("Message has been added to {0}.", io);
                 return "171";
             }
@@ -1121,11 +1190,11 @@ namespace Gladiator.Controllers
             }
         }
 
-        public string PeekMsg(bool io)
+        public bool PeekMsg(bool io)
         {
             if (!VerifyConfiguration())
             {
-                return "34";
+                return false;
             }
             try
             {
@@ -1137,12 +1206,12 @@ namespace Gladiator.Controllers
                     peekedMessage = queueo.PeekMessage();
                 // Display message.
                 //Console.WriteLine(peekedMessage.AsString);
-                return "172";
+                return true;
             }
             catch
             {
-                Console.WriteLine("Message peeking failed.");
-                return "173";
+                //Console.WriteLine("Message peeking failed.");
+                return false;
             }
         }
 
@@ -1175,12 +1244,9 @@ namespace Gladiator.Controllers
             }
         }
 
-        public string deQueueMsg(bool io)
+        public CloudQueueMessage deQueueMsg(bool io)
         {
-            if (!VerifyConfiguration())
-            {
-                return "34";
-            }
+            CloudQueueMessage retrievedMessage = new CloudQueueMessage("173");
             try
             {
                 CloudQueue queue;
@@ -1189,16 +1255,16 @@ namespace Gladiator.Controllers
                 else
                     queue = queueo;
                 // Get the next message
-                CloudQueueMessage retrievedMessage = queue.GetMessage();
+                retrievedMessage = queue.GetMessage();
                 //Process the message in less than 30 seconds, and then delete the message
                 queue.DeleteMessage(retrievedMessage);
                 //Console.WriteLine("Message has been de-queued.");
-                return "175";
+                return retrievedMessage;
             }
             catch
             {
                 //Console.WriteLine("Message de-queueing failed.");
-                return "173";
+                return retrievedMessage;
             }
         }
 
