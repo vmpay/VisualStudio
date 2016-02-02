@@ -12,6 +12,7 @@ using System.Web;
 using Gladiator.Models;
 using System.Configuration;
 using System.Net.Mail;
+using Microsoft.WindowsAzure.Storage.Queue;
 
 /*********************************************
     Error codes:
@@ -27,17 +28,23 @@ using System.Net.Mail;
     14 - Entity can't be retreived
     15 - Incorrect password
     16 - Recovery password mail has been sent to you
+    171 - Message is added to the queue
+    172 - Message peeking finished successful
+    173 - There is no messages in the queue
+    174 - Message is updated
+    175 - Message is deleted
     2? - Service information
     20 - Your lvl is increased
     21 - Entity is deleted
     22 - Table is deleted
     3? - Technical errors. Programmers should solve them
-    30 - Table is created succesfully
+    30 - Table is created successfully
     31 - Table already exists
     32 - Table not found
     33 - Something goes wrong  - Empty code
     34 - Authentification failed. Check Primary & Secondary keys
     35 - Send mail error
+    36 - Queue is created successfully
 *********************************************/
 
 namespace Gladiator.Controllers
@@ -54,7 +61,30 @@ namespace Gladiator.Controllers
             string resultmsg = "33";
             result = player.battle(enemy);
             azureTable user = new azureTable();
+            if (result)
+            {
+                resultmsg = "01" + player.GetLog();// victory
+            }
+            else
+                resultmsg = "00" + player.GetLog();// defeat
+            user.UpdateLvl(login, result);
+            string xml = string.Format("{0}", resultmsg);
+            HttpResponseMessage response = Request.CreateResponse();
+            response.Content = new StringContent(xml, System.Text.Encoding.UTF8, "text/plain");
+            return response;
+        }
 
+        [Route("api/fightpvp")]
+        [HttpGet]
+        public HttpResponseMessage FightPVP([FromUri]string login, [FromUri]double a, [FromUri]double b, [FromUri]double c)
+        {
+
+            Gladiator enemy = new Gladiator(d);
+            Gladiator player = new Gladiator(a, b, c);
+            bool result;
+            string resultmsg = "33";
+            result = player.battle(enemy);
+            azureTable user = new azureTable();
             if (result)
             {
                 resultmsg = "01" + player.GetLog();// victory
@@ -407,6 +437,18 @@ namespace Gladiator.Controllers
         public azureTable()
         {
             tableName = "users";
+            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                    ConfigurationManager.AppSettings["StorageConnectionString"]);
+            CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
+            CloudTable table = tableClient.GetTableReference(tableName);
+            try
+            {
+                table.CreateIfNotExists();
+            }
+            catch
+            {
+                tableName = "users";
+            }
         }
 
         public string CreateTable(string name)
@@ -993,4 +1035,338 @@ namespace Gladiator.Controllers
             return result;
         }
     }
+
+    class AzureQueue
+    {
+        private CloudStorageAccount storageAccount;
+        private CloudQueueClient queueClient;
+        private CloudQueue queuei;//TRUE - input queue
+        private CloudQueue queueo;//FLASE - output queue
+        private string result;
+
+        public AzureQueue()
+        {
+            result = "33";
+            if (!VerifyConfiguration())
+            {
+                return;
+            }
+            // Retrieve storage account from connection string
+            storageAccount = CloudStorageAccount.Parse(
+                ConfigurationManager.ConnectionStrings["queueConnectionString"].ConnectionString);
+            // Create the queue client
+            queueClient = storageAccount.CreateCloudQueueClient();
+            // Retrieve a reference to a queue
+            queuei = queueClient.GetQueueReference("inputqueue");
+            queueo = queueClient.GetQueueReference("outputqueue");
+            try
+            {
+                queuei.CreateIfNotExists();
+                queueo.CreateIfNotExists();
+            }
+            catch
+            {
+                result = "33";
+            }
+        }
+
+        public string createQueue(bool io)
+        {
+            if (!VerifyConfiguration())
+            {
+                return "34";
+            }
+            // Create the queue if it doesn't already exist
+            try
+            {
+                CloudQueue queue;
+                if (io)
+                    queue = queuei;
+                else
+                    queue = queueo;
+                queue.CreateIfNotExists();
+                //Console.WriteLine("Queue has been created.");
+                return "36";
+            }
+            catch
+            {
+                //Console.WriteLine("Queue creation failed.");
+                return "34";
+            }
+        }
+
+        public string AddMsgQ(string inputstring, bool io)
+        {
+            if (!VerifyConfiguration())
+            {
+                return "34";
+            }
+            // Create a message and add it to the queue.
+            CloudQueueMessage message = new CloudQueueMessage(inputstring);
+            try
+            {
+                CloudQueue queue;
+                if (io)
+                    queue = queuei;
+                else
+                    queue = queueo;
+                queue.AddMessage(message, TimeSpan.FromSeconds(30));
+                //Console.WriteLine("Message has been added to {0}.", io);
+                return "171";
+            }
+            catch
+            {
+                //Console.WriteLine("Message creation failed {0}.", io);
+                return "34";
+            }
+        }
+
+        public string PeekMsg(bool io)
+        {
+            if (!VerifyConfiguration())
+            {
+                return "34";
+            }
+            try
+            {
+                // Peek at the next message
+                CloudQueueMessage peekedMessage;
+                if (io)
+                    peekedMessage = queuei.PeekMessage();
+                else
+                    peekedMessage = queueo.PeekMessage();
+                // Display message.
+                //Console.WriteLine(peekedMessage.AsString);
+                return "172";
+            }
+            catch
+            {
+                Console.WriteLine("Message peeking failed.");
+                return "173";
+            }
+        }
+
+        public string UpdMsg(string inputstring, bool io)
+        {
+            if (!VerifyConfiguration())
+            {
+                return "34";
+            }
+            try
+            {
+                // Get the message from the queue and update the message contents.
+                CloudQueue queue;
+                if (io)
+                    queue = queuei;
+                else
+                    queue = queueo;
+                CloudQueueMessage message = queue.GetMessage();
+                message.SetMessageContent(inputstring);
+                queue.UpdateMessage(message,
+                    TimeSpan.FromSeconds(6.0),  // Make it visible for another 6 seconds.
+                    MessageUpdateFields.Content | MessageUpdateFields.Visibility);
+                //Console.WriteLine("Message has been changed.");
+                return "174";
+            }
+            catch
+            {
+                //Console.WriteLine("Message changing failed.");
+                return "173";
+            }
+        }
+
+        public string deQueueMsg(bool io)
+        {
+            if (!VerifyConfiguration())
+            {
+                return "34";
+            }
+            try
+            {
+                CloudQueue queue;
+                if (io)
+                    queue = queuei;
+                else
+                    queue = queueo;
+                // Get the next message
+                CloudQueueMessage retrievedMessage = queue.GetMessage();
+                //Process the message in less than 30 seconds, and then delete the message
+                queue.DeleteMessage(retrievedMessage);
+                //Console.WriteLine("Message has been de-queued.");
+                return "175";
+            }
+            catch
+            {
+                //Console.WriteLine("Message de-queueing failed.");
+                return "173";
+            }
+        }
+
+        public string ReadMsg(int count, bool io)
+        {
+            if (!VerifyConfiguration())
+            {
+                return "34";
+            }
+            try
+            {
+                CloudQueue queue;
+                if (io)
+                    queue = queuei;
+                else
+                    queue = queueo;
+                int i = 1;
+                foreach (CloudQueueMessage message in queue.GetMessages(count, TimeSpan.FromSeconds(30)))
+                {
+                    //Console.WriteLine("{0}. {1}", i, message.AsString);
+                    i++;
+                    // Process all messages in less than 30 seconds, deleting each message after processing.
+                    queue.DeleteMessage(message);
+                }
+                if (i == 1)
+                {
+                    //Console.WriteLine("No messages found in the queue.");
+                    return "173";
+                }
+                return "175";
+            }
+            catch
+            {
+                //Console.WriteLine("Read and delete all(20) messages fails.");
+                return "34";
+            }
+        }
+
+        public string ViewMsg(int count, bool io)
+        {
+            if (!VerifyConfiguration())
+            {
+                return "34";
+            }
+            try
+            {
+                CloudQueue queue;
+                if (io)
+                    queue = queuei;
+                else
+                    queue = queueo;
+                int i = 1;
+                foreach (CloudQueueMessage message in queue.GetMessages(count, TimeSpan.FromSeconds(5)))
+                {
+                    //Console.WriteLine("{0}. {1} - {2}", i, message.AsString, message.ExpirationTime);
+                    //TODO: something
+                    i++;
+                    /*queue.DeleteMessage(message);
+                    if (message.AsString != "vip msg")
+                        queue.AddMessage(message, TimeSpan.FromSeconds(30));*/
+                }
+                if (i == 0)
+                {
+                    //Console.WriteLine("No messages found in the queue.");
+                    return "173";
+                }
+                return "172";
+            }
+            catch
+            {
+                //Console.WriteLine("View all(20) messages fails.");
+                return "34";
+            }
+        }
+
+        public int getQueueLength(bool io)
+        {
+            if (!VerifyConfiguration())
+            {
+                return -1;
+            }
+            try
+            {
+                CloudQueue queue;
+                if (io)
+                    queue = queuei;
+                else
+                    queue = queueo;
+                // Fetch the queue attributes.
+                queue.FetchAttributes();
+                // Retrieve the cached approximate message count.
+                int? cachedMessageCount = queue.ApproximateMessageCount;
+                int result = cachedMessageCount ?? default(int);
+                // Display number of messages.
+                //Console.WriteLine("Number of messages in queue: " + cachedMessageCount);
+                return result;
+            }
+            catch
+            {
+                //Console.WriteLine("Counting messages fails.");
+                return -1;
+            }
+        }
+
+        public bool deleteQueue(bool io)
+        {
+            if (!VerifyConfiguration())
+            {
+                return false;
+            }
+            try
+            {
+                CloudQueue queue;
+                if (io)
+                    queue = queuei;
+                else
+                    queue = queueo;
+                // Delete the queue.
+                queue.Delete();
+                //Console.WriteLine("Queue has been deleted.");
+                return true;
+            }
+            catch
+            {
+                //Console.WriteLine("Queue deletion fails.");
+                return false;
+            }
+        }
+
+        public int countQueueLength(bool io)
+        {
+            if (!VerifyConfiguration())
+            {
+                return -1;
+            }
+            try
+            {
+                CloudQueue queue;
+                if (io)
+                    queue = queuei;
+                else
+                    queue = queueo;
+                int i = 0;
+                foreach (CloudQueueMessage message in queue.GetMessages(32, TimeSpan.FromSeconds(1)))
+                {
+                    i++;
+                }
+                return i;
+            }
+            catch
+            {
+                //Console.WriteLine("View all(20) messages fails.");
+                return -1;
+            }
+        }
+
+        private static bool VerifyConfiguration()
+        {
+            string queueConnectionString = ConfigurationManager.ConnectionStrings["queueConnectionString"].ConnectionString;
+            bool configOK = true;
+            if (string.IsNullOrWhiteSpace(queueConnectionString))
+            {
+                configOK = false;
+                //Console.WriteLine("Please add the Azure Storage account credentials in App.config");
+            }
+            return configOK;
+        }
+
+    }
+    
 }

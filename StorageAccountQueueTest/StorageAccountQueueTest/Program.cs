@@ -316,7 +316,6 @@ namespace StorageAccountQueueTest
                 // Retrieve a reference to a queue
                 queuei = queueClient.GetQueueReference("inputqueue");
                 queueo = queueClient.GetQueueReference("outputqueue");
-                Console.WriteLine("Before queues creating.");
                 try
                 {
                     queuei.CreateIfNotExists();
@@ -576,8 +575,8 @@ namespace StorageAccountQueueTest
                 }
             }
 
-
         }
+
     }
 
 }
