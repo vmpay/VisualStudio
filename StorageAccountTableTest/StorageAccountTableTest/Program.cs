@@ -56,7 +56,7 @@ namespace StorageAccountTableTest
                 {
                     case 1:
                         {
-                            Console.WriteLine("CreateTable(users)={0}",Table1.CreateTable("users"));
+                            Console.WriteLine("CreateTable(users)={0}",Table1.CreateTable("people"));
                             break;
                         }
                     case 2:

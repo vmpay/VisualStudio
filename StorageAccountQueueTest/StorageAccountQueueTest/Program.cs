@@ -25,7 +25,7 @@ namespace StorageAccountQueueTest
                     "Choose action:\n1 - Create queue\n2 - Add message\n3 - Peek at the next message\n4 - Change message");
                 Console.WriteLine(
                     "5 - De-queue message\n6 - Read and delete all(20) messages\n7 - Get the queue length\n8 - View all(20) messages");
-                Console.WriteLine("9 - Delete queue");
+                Console.WriteLine("9 - Delete queue\n10 - Count Queue Length manually");
                 string actioninput = Console.ReadLine();
                 if (!int.TryParse(actioninput, out action))
                 {
@@ -49,7 +49,7 @@ namespace StorageAccountQueueTest
                             Console.WriteLine("{0} - is not a number", actioninput);
                             break;
                         }
-                        if (action < 0 || action >1)
+                        if (action < 0 || action > 1)
                         {
                             Console.WriteLine("{0} - is not a valid number", actioninput);
                             break;
@@ -75,7 +75,7 @@ namespace StorageAccountQueueTest
                             Console.WriteLine("{0} - is not a valid number", actioninput);
                             break;
                         }
-                        
+
                         if (action == 1)
                             io = true;
                         else
@@ -220,6 +220,26 @@ namespace StorageAccountQueueTest
                         pvpQueue.deleteQueue(io);
                         break;
                     case 10:
+                        Console.WriteLine("Please select queue: 1 - input queue, 0 - output queue");
+                        actioninput = Console.ReadLine();
+                        if (!int.TryParse(actioninput, out action))
+                        {
+                            Console.WriteLine("{0} - is not a number", actioninput);
+                            break;
+                        }
+                        if (action < 0 || action > 1)
+                        {
+                            Console.WriteLine("{0} - is not a valid number", actioninput);
+                            break;
+                        }
+
+                        if (action == 1)
+                            io = true;
+                        else
+                            io = false;
+                        Console.WriteLine("Queue count (manually) = {0}", pvpQueue.countQueueLength(io));
+                        break;
+                    /*case 10:
                         {
                             string blobName = "vmpay";
                             try
@@ -251,11 +271,13 @@ namespace StorageAccountQueueTest
                             break;
                             
 
-                        }
+                        }*/
                     default:
-                        break;
+                        Console.WriteLine("count={0}", count);
+                        Console.ReadLine();
+                        return;
                 }
-            }           
+            }
             Console.ReadLine();
         }
 
@@ -292,22 +314,21 @@ namespace StorageAccountQueueTest
                 // Create the queue client
                 queueClient = storageAccount.CreateCloudQueueClient();
                 // Retrieve a reference to a queue
-                queuei = queueClient.GetQueueReference("mediagenerator");
-                //queuei = queueClient.GetQueueReference("inputqueue");
-                //queueo = queueClient.GetQueueReference("outputqueue");
-                queueo = queueClient.GetQueueReference("mediaconverter");
+                queuei = queueClient.GetQueueReference("inputqueue");
+                queueo = queueClient.GetQueueReference("outputqueue");
                 Console.WriteLine("Before queues creating.");
                 try
                 {
-                    //queuei.CreateIfNotExists();
-                    //queueo.CreateIfNotExists();
+                    queuei.CreateIfNotExists();
+                    queueo.CreateIfNotExists();
                     Console.WriteLine("Queues have been created.");
-                } catch
+                }
+                catch
                 {
                     Console.WriteLine("Queues haven't been created.");
                 }
-                
-                
+
+
             }
 
             public bool createQueue(bool io)
@@ -335,6 +356,7 @@ namespace StorageAccountQueueTest
             {
                 // Create a message and add it to the queue.
                 CloudQueueMessage message = new CloudQueueMessage(inputstring);
+                //message.ExpirationTime = 
                 try
                 {
                     CloudQueue queue;
@@ -342,7 +364,7 @@ namespace StorageAccountQueueTest
                         queue = queuei;
                     else
                         queue = queueo;
-                    queue.AddMessage(message);                    
+                    queue.AddMessage(message, TimeSpan.FromSeconds(30));
                     Console.WriteLine("Message has been added to {0}.", io);
                     return true;
                 }
@@ -353,7 +375,7 @@ namespace StorageAccountQueueTest
                 }
             }
 
-            public bool PeekMsg (bool io)
+            public bool PeekMsg(bool io)
             {
                 try
                 {
@@ -453,7 +475,7 @@ namespace StorageAccountQueueTest
                 }
             }
 
-            public bool ViewMsg (int count, bool io)
+            public bool ViewMsg(int count, bool io)
             {
                 try
                 {
@@ -463,10 +485,13 @@ namespace StorageAccountQueueTest
                     else
                         queue = queueo;
                     int i = 1;
-                    foreach (CloudQueueMessage message in queue.GetMessages(count, TimeSpan.FromSeconds(30)))
+                    foreach (CloudQueueMessage message in queue.GetMessages(count, TimeSpan.FromSeconds(5)))
                     {
-                        Console.WriteLine("{0}. {1}", i, message.AsString);
+                        Console.WriteLine("{0}. {1} - {2}", i, message.AsString, message.ExpirationTime);
                         i++;
+                        /*queue.DeleteMessage(message);
+                        if (message.AsString != "vip msg")
+                            queue.AddMessage(message, TimeSpan.FromSeconds(30));*/
                     }
                     if (i == 0)
                     {
@@ -482,7 +507,7 @@ namespace StorageAccountQueueTest
                 }
             }
 
-            public int getQueueLength (bool io)
+            public int getQueueLength(bool io)
             {
                 try
                 {
@@ -507,7 +532,7 @@ namespace StorageAccountQueueTest
                 }
             }
 
-            public bool deleteQueue (bool io)
+            public bool deleteQueue(bool io)
             {
                 try
                 {
@@ -528,103 +553,31 @@ namespace StorageAccountQueueTest
                 }
             }
 
-        }
-
-        public class EntityBase
-        {
-            public long Id { get; set; }
-            public bool IsDeleted { get; set; }
-        }
-
-        public class BlobStorage : EntityBase
-        {
-            public string AccountName { get; set; }
-            public string ContainerName { get; set; }
-            public string BlobName { get; set; }
-        }
-
-        public class Blob : BlobStorage
-        {
-            public string Key { get; set; }
-            public Blob(string account, string container, string key)
+            public int countQueueLength(bool io)
             {
-                this.AccountName = account;
-                this.ContainerName = container;
-                this.Key = key;
-            }
-            public CloudBlockBlob Insert(Stream insertFile, string blobName)
-            {
-                StorageCredentials creds = new StorageCredentials(this.AccountName, this.Key);
-                CloudStorageAccount account = new CloudStorageAccount(creds, useHttps: true);
-
-                CloudBlobClient client = account.CreateCloudBlobClient();
-
-                CloudBlobContainer sampleContainer = client.GetContainerReference(this.ContainerName);
-                sampleContainer.CreateIfNotExists();
-                sampleContainer.SetPermissions(
-                    new BlobContainerPermissions
-                    {
-                        PublicAccess = BlobContainerPublicAccessType.Blob
-                    });
-
-                CloudBlockBlob blob = sampleContainer.GetBlockBlobReference(blobName);
-                blob.UploadFromStream(insertFile);
-
-                return blob;
-            }
-            public Stream Download(string blobName, string path)
-            {
-                StorageCredentials creds = new StorageCredentials(this.AccountName, this.Key);
-                CloudStorageAccount account = new CloudStorageAccount(creds, useHttps: true);
-                CloudBlobClient client = account.CreateCloudBlobClient();
-                CloudBlobContainer sampleContainer = client.GetContainerReference(this.ContainerName);
-                // Retrieve reference to a blob named "photo1.jpg".
-                CloudBlockBlob blockBlob = sampleContainer.GetBlockBlobReference(blobName);
-                // Save blob contents to a file.
-                System.IO.Stream stream = new System.IO.MemoryStream();
-                blockBlob.DownloadToStream(stream);
-                /*using (var fileStream = System.IO.File.OpenWrite(@path))
+                try
                 {
-                    blockBlob.DownloadToStream(fileStream);
-                }*/
-                return stream;
+                    CloudQueue queue;
+                    if (io)
+                        queue = queuei;
+                    else
+                        queue = queueo;
+                    int i = 0;
+                    foreach (CloudQueueMessage message in queue.GetMessages(32, TimeSpan.FromSeconds(1)))
+                    {
+                        i++;
+                    }
+                    return i;
+                }
+                catch
+                {
+                    Console.WriteLine("View all(20) messages fails.");
+                    return -1;
+                }
             }
 
-            public Stream DownloadMiniature(string blobName)
-            {
-                StorageCredentials creds = new StorageCredentials(this.AccountName, this.Key);
-                CloudStorageAccount account = new CloudStorageAccount(creds, useHttps: true);
-                CloudBlobClient client = account.CreateCloudBlobClient();
-                CloudBlobContainer sampleContainer = client.GetContainerReference(this.ContainerName);
-                // Retrieve reference to a blob named "photo1.jpg".
-                CloudBlockBlob blockBlob = sampleContainer.GetBlockBlobReference(blobName);
-                //System.IO.Stream stream = new System.IO.MemoryStream();
-                System.IO.Stream stream = System.IO.File.OpenWrite(@"d:\qwerty.txt");
-                blockBlob.DownloadToStream(stream);
 
-                return stream;
-            }
         }
-
-
-        public class Blobs
-        {
-            public static readonly Blob PointImagesBlob = new Blob(
-                ConfigurationManager.AppSettings["blob-points-account"],
-                "images",
-                ConfigurationManager.AppSettings["blob-points-primary-key"]);
-
-            public static readonly Blob PointVideosBlob = new Blob(
-                ConfigurationManager.AppSettings["blob-points-account"],
-                "videos",
-                ConfigurationManager.AppSettings["blob-points-primary-key"]);
-
-            public static readonly Blob TripPostersBlob = new Blob(
-                ConfigurationManager.AppSettings["blob-points-account"],
-                "posters",
-                ConfigurationManager.AppSettings["blob-points-primary-key"]);
-        }
-
     }
 
 }
